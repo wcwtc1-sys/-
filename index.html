@@ -1,114 +1,339 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的作品集</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f8f9fa;
-            color: #1a1a2e;
-        }
-        h1 {
-            font-size: 32px;
-            border-bottom: 4px solid #6c63ff;
-            padding-bottom: 12px;
-        }
-        .subtitle {
-            color: #555;
-            font-size: 18px;
-            margin-top: -8px;
-            margin-bottom: 30px;
-        }
-        .category {
-            font-size: 22px;
-            font-weight: 600;
-            margin-top: 30px;
-            margin-bottom: 12px;
-            color: #6c63ff;
-        }
-        .file-list {
-            list-style: none;
-            padding: 0;
-        }
-        .file-list li {
-            background: white;
-            margin-bottom: 8px;
-            padding: 14px 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            transition: 0.2s;
-            border-left: 4px solid #6c63ff;
-        }
-        .file-list li:hover {
-            box-shadow: 0 4px 14px rgba(108, 99, 255, 0.15);
-            transform: translateX(4px);
-        }
-        .file-list a {
-            text-decoration: none;
-            color: #1a1a2e;
-            font-size: 16px;
-            display: block;
-        }
-        .file-list a:hover {
-            color: #6c63ff;
-        }
-        .file-type {
-            font-size: 12px;
-            color: #888;
-            background: #f0f0f0;
-            padding: 2px 10px;
-            border-radius: 20px;
-            margin-left: 10px;
-        }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            color: #aaa;
-            font-size: 14px;
-            border-top: 1px solid #e0e0e0;
-            padding-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的作品集 | Portfolio</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f4f5fb;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sub: #6b6b80;
+    --primary: #6c63ff;
+    --primary-light: #a78bfa;
+    --border: #e8e8f0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.05);
+    --shadow-hover: 0 8px 28px rgba(108,99,255,0.16);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== 顶部 Header ===== */
+  .header {
+    background: linear-gradient(135deg, #6c63ff 0%, #a78bfa 100%);
+    padding: 64px 24px 56px;
+    text-align: center;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: var(--bg);
+    border-radius: 40px 40px 0 0;
+  }
+  .avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 18px;
+    border: 3px solid rgba(255,255,255,0.4);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .header p {
+    font-size: 15px;
+    opacity: 0.9;
+    margin-top: 6px;
+  }
+
+  /* ===== 主容器 ===== */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 8px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== 分类标题 ===== */
+  .section-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 36px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .icon {
+    font-size: 20px;
+  }
+  .section-title .count {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--primary);
+    background: rgba(108,99,255,0.1);
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-left: auto;
+  }
+
+  /* ===== 卡片网格 ===== */
+  .grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    transition: all 0.22s ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(108,99,255,0.3);
+  }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(167,139,250,0.12));
+  }
+
+  .card-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-desc {
+    font-size: 12.5px;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+
+  .card-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(108,99,255,0.1);
+    color: var(--primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .card-arrow {
+    color: var(--primary);
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.22s, transform 0.22s;
+    flex-shrink: 0;
+  }
+  .card:hover .card-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  /* ===== 页脚 ===== */
+  .footer {
+    text-align: center;
+    padding: 32px 20px;
+    color: #a0a0b0;
+    font-size: 13px;
+  }
+  .footer .dot {
+    color: var(--primary);
+  }
+
+  /* ===== 手机适配 ===== */
+  @media (max-width: 560px) {
+    .header { padding: 48px 20px 44px; }
+    .header h1 { font-size: 24px; }
+    .avatar { width: 72px; height: 72px; font-size: 32px; }
+    .container { padding: 4px 14px 60px; }
+    .card { padding: 14px 16px; gap: 12px; }
+    .card-icon { width: 40px; height: 40px; font-size: 18px; }
+    .card-title { font-size: 14px; }
+    .card-arrow { display: none; }
+  }
+</style>
 </head>
 <body>
 
-    <h1>📁 我的作品集</h1>
-    <p class="subtitle">欢迎浏览我的作品 · 点击文件名即可查看或下载</p>
+  <!-- ===== 顶部 ===== -->
+  <div class="header">
+    <div class="avatar">🎮</div>
+    <h1>我的作品集</h1>
+    <p>游戏运营 · 数据分析 · AI Agent</p>
+  </div>
 
-    <!-- ====== 项目/作品分类 ====== -->
-    <div class="category">📊 运营分析报告</div>
-    <ul class="file-list">
-        <li><a href="《杖剑传说》APP版产品运营分析报告.pptx" target="_blank">《杖剑传说》APP版产品运营分析报告.pptx <span class="file-type">PPT</span></a></li>
-        <li><a href="《蔚蓝档案》商店五图分析报告.pptx" target="_blank">《蔚蓝档案》商店五图分析报告.pptx <span class="file-type">PPT</span></a></li>
-    </ul>
+  <div class="container">
 
-    <div class="category">🎮 游戏拆解</div>
-    <ul class="file-list">
-        <li><a href="游戏数值反拆解与长线运营" target="_blank">游戏数值反拆解与长线运营 <span class="file-type">文件夹</span></a></li>
-        <li><a href="饥荒科技系统拆解.pptx" target="_blank">饥荒科技系统拆解.pptx <span class="file-type">PPT</span></a></li>
-    </ul>
-
-    <div class="category">🤖 自研Agent</div>
-    <ul class="file-list">
-        <li><a href="自我迭代系统助手ai.rar" target="_blank">自我迭代系统助手 AI <span class="file-type">RAR</span></a></li>
-        <li><a href="小游戏demo.rar" target="_blank">重生之我要成为饮料大王 <span class="file-type">PPT</span></a></li>
-    </ul>
-
-    <div class="category">📝 文字内容</div>
-    <ul class="file-list">
-        <li><a href="对于联动的看法.txt" target="_blank">对于联动的看法 <span class="file-type">TXT</span></a></li>
-        <li><a href="游戏经历.txt" target="_blank">游戏经历 <span class="file-type">TXT</span></a></li>
-        <li><a href="青春恋爱文学.txt" target="_blank">青春恋爱文学 <span class="file-type">TXT</span></a></li>
-    </ul>
-
-    <div class="footer">
-        👋 感谢访问 · 持续更新中
+    <!-- ===== 运营分析报告 ===== -->
+    <div class="section-title">
+      <span class="icon">📊</span> 运营分析报告
+      <span class="count">2</span>
     </div>
+    <div class="grid">
+      <a class="card" href="《杖剑传说》APP版产品运营分析报告.pptx" target="_blank">
+        <div class="card-icon">📈</div>
+        <div class="card-body">
+          <div class="card-title">《杖剑传说》APP版产品运营分析报告</div>
+          <div class="card-desc">产品运营 · 数据分析</div>
+        </div>
+        <span class="card-tag">PPT</span>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="card" href="《蔚蓝档案》商店五图分析报告.pptx" target="_blank">
+        <div class="card-icon">🛒</div>
+        <div class="card-body">
+          <div class="card-title">《蔚蓝档案》商店五图分析报告</div>
+          <div class="card-desc">商店运营 · 视觉分析</div>
+        </div>
+        <span class="card-tag">PPT</span>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+
+    <!-- ===== 游戏拆解 ===== -->
+    <div class="section-title">
+      <span class="icon">🎮</span> 游戏拆解
+      <span class="count">2</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="游戏数值反拆解与长线运营" target="_blank">
+        <div class="card-icon">🔢</div>
+        <div class="card-body">
+          <div class="card-title">游戏数值反拆解与长线运营</div>
+          <div class="card-desc">数值设计 · 长线运营策略</div>
+        </div>
+        <span class="card-tag">文件夹</span>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="card" href="饥荒科技系统拆解.pptx" target="_blank">
+        <div class="card-icon">⚙️</div>
+        <div class="card-body">
+          <div class="card-title">饥荒科技系统拆解</div>
+          <div class="card-desc">系统设计 · 科技树分析</div>
+        </div>
+        <span class="card-tag">PPT</span>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+
+    <!-- ===== 自研 Agent & 小游戏 ===== -->
+    <div class="section-title">
+      <span class="icon">🤖</span> 自研项目
+      <span class="count">2</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="自我迭代系统助手ai.rar" target="_blank">
+        <div class="card-icon">🧠</div>
+        <div class="card-body">
+          <div class="card-title">自我迭代系统助手 AI</div>
+          <div class="card-desc">个人搭建的智能体项目</div>
+        </div>
+        <span class="card-tag">RAR</span>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="card" href="小游戏demo.rar" target="_blank">
+        <div class="card-icon">🥤</div>
+        <div class="card-body">
+          <div class="card-title">重生之我要成为饮料大王</div>
+          <div class="card-desc">自研小游戏 Demo</div>
+        </div>
+        <span class="card-tag">RAR</span>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+
+    <!-- ===== 文字内容 ===== -->
+    <div class="section-title">
+      <span class="icon">📝</span> 文字内容
+      <span class="count">3</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="对于联动的看法.txt" target="_blank">
+        <div class="card-icon">🔗</div>
+        <div class="card-body">
+          <div class="card-title">对于联动的看法</div>
+          <div class="card-desc">行业观察 · 联动策略</div>
+        </div>
+        <span class="card-tag">TXT</span>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="card" href="游戏经历.txt" target="_blank">
+        <div class="card-icon">🕹️</div>
+        <div class="card-body">
+          <div class="card-title">游戏经历</div>
+          <div class="card-desc">个人游戏历程</div>
+        </div>
+        <span class="card-tag">TXT</span>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="card" href="青春恋爱文学.txt" target="_blank">
+        <div class="card-icon">💭</div>
+        <div class="card-body">
+          <div class="card-title">青春恋爱文学</div>
+          <div class="card-desc">文字创作</div>
+        </div>
+        <span class="card-tag">TXT</span>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    👋 感谢访问 <span class="dot">·</span> 持续更新中
+  </div>
 
 </body>
 </html>
