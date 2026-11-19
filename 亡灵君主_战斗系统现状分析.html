@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《亡灵君主》战斗系统现状分析 · 文天赐</title>
+<style>
+:root{--ink:#1b2230;--muted:#5c6775;--line:#e4e8ef;--accent:#0e7482;--bg:#f6f7fa;--paper:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.75;font-size:15px}
+.wrap{max-width:920px;margin:0 auto;padding:34px 40px 90px}
+h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+h2{font-size:21px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin:40px 0 16px}
+h3{font-size:17px;margin:26px 0 10px;padding-left:11px;border-left:4px solid var(--accent)}
+h4{font-size:15.5px;margin:20px 0 8px}
+h5{font-size:14.5px;margin:16px 0 6px;color:var(--muted)}
+p{margin:10px 0}
+ul{margin:10px 0;padding-left:24px}
+li{margin:5px 0}
+li.num{list-style:none;margin:6px 0;padding-left:26px;position:relative}
+li.num::before{content:attr(data-n);position:absolute;left:0;color:var(--accent);font-weight:700}
+blockquote{border-left:4px solid var(--accent);background:#eef6f7;padding:10px 16px;margin:16px 0;color:#335;border-radius:0 6px 6px 0}
+blockquote p{margin:0}
+code{font-family:Consolas,monospace;background:#eef1f5;color:#0e5c66;padding:1.5px 6px;border-radius:4px;font-size:13.5px}
+pre{background:#111827;color:#e5e7eb;padding:18px 20px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;color:inherit;padding:0}
+.tw{overflow-x:auto;margin:16px 0}
+table{border-collapse:collapse;width:100%;background:var(--paper);font-size:13.5px;border:1px solid var(--line)}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #eef1f6;vertical-align:top;line-height:1.6}
+th{background:#f1f4f8;font-weight:700;white-space:nowrap}
+tr:hover td{background:#fafbfd}
+hr{border:none;border-top:1px solid var(--line);margin:26px 0}
+.head-note{color:var(--muted);font-size:13.5px;margin-top:8px}
+@media(max-width:640px){.wrap{padding:22px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>《亡灵君主》战斗系统现状分析报告</h2>
+<blockquote><strong>性质</strong>：只读代码审计。本次分析未修改任何工程文件。</blockquote>
+<blockquote><strong>分析对象</strong>：<code>D:\Unity\be like</code>（Unity 6000.3.24f1 / URP 17.3.0 / Input System 1.20.0）</blockquote>
+<blockquote><strong>生成时间</strong>：2026-09-18</blockquote>
+<blockquote><strong>方法</strong>：逐文件通读核心脚本 + 解析场景 YAML（根物件→组件、脚本 GUID→文件名、Animator 状态→源 FBX）。</blockquote>
+<hr>
+<h3>0. 重要前提纠正</h3>
+<p><strong>被要求检查的工作目录（<code>亡灵君王boss战\unity白盒</code>）不是活工程。</strong> 它是被弃用的 2D 版本：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>事实</th>
+<th>证据</th>
+</tr></thead><tbody>
+<tr>
+<td>它不是完整 Unity 工程</td>
+<td>只有 <code>Assets/_Game</code>，<strong>没有 <code>ProjectSettings</code> / <code>Packages</code></strong></td>
+</tr>
+<tr>
+<td>它只完成了 M0</td>
+<td><code>Assets/_Game/README_M0.md</code> 交付清单：3 个 .cs（GameManager / ObjectPool / ArenaWhiteboxBuilder）+ 1 个 2D 场景</td>
+</tr>
+<tr>
+<td>它是 <strong>2D</strong>，不是 ARPG 3D</td>
+<td><code>SpriteRenderer</code> + <code>BoxCollider2D</code> + <code>Light2D</code> + 正交相机</td>
+</tr>
+<tr>
+<td>它没有 Player / Boss / 战斗 / 动画</td>
+<td><code>Scripts/Player</code>、<code>Scripts/Boss</code>、<code>Scripts/Combat</code> 里<strong>只有 <code>.gitkeep</code></strong></td>
+</tr>
+</tbody></table></div>
+<p>真正对应"已完成 M0~M8 Boss 战""Unity ARPG"描述的工程是：</p>
+<p><strong><code>D:\Unity\be like</code></strong> —— 唯一构建场景 <code>Assets/Scenes/Arena_Whitebox_3D.unity</code>，可玩产物 <code>Build\UndeadMonarch.exe</code>（约 99 MB，Windows x64 / Mono2x）。</p>
+<p><strong>交叉证据</strong>：<code>D:\Unity\be like\PROJECT_STATE.md</code> 第 80 行明确把 <code>unity白盒</code> 与 <code>D:\Unity\fight</code> 标为<strong>"已弃用，不属本任务范围"</strong>；全盘只有 <code>be like</code> 记录了 M0–M8 全绿。</p>
+<blockquote>后续所有章节均基于 <code>D:\Unity\be like</code>，所有结论均来自实际读过的文件。</blockquote>
+<hr>
+<h3>A. 当前项目架构</h3>
+<h4>A.1 规模</h4>
+<ul>
+<li><code>Assets/_Game/Scripts/<strong></code>：</strong>35 个 .cs / 11,617 行**</li>
+</ul>
+<p>（<code>PROJECT_STATE.md</code> 记录的"29 个 / 6775 行"是 9/17 快照；9/18 美术接入批次新增 6 个文件）</p>
+<ul>
+<li><strong>没有任何 <code>.asmdef</code></strong> —— 全部编译进 <code>Assembly-CSharp</code></li>
+<li><strong>没有版本控制</strong>（工程内无 <code>.git</code>）</li>
+</ul>
+<h4>A.2 分层（命名空间即职责边界）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>命名空间</th>
+<th>文件</th>
+<th>职责</th>
+</tr></thead><tbody>
+<tr>
+<td><code>Game.Combat</code></td>
+<td><code>DamageInfo.cs</code>、<code>TrainingDummy.cs</code></td>
+<td><strong>唯一的战斗契约</strong>：<code>DamageInfo</code> / <code>DamageFlags</code> / <code>IDamageable</code></td>
+</tr>
+<tr>
+<td><code>Game.Player</code></td>
+<td><code>PlayerController</code>、<code>PlayerCombat</code>、<code>PlayerHealth</code>、<code>LockOnController</code>、<code>PlayerVisuals</code>、<code>PlayerModelAnimator</code>、<code>PlayerWeapon</code>、<code>PlayerVfx</code></td>
+<td>移动 / 出招 / 生存 / 锁定 / 外观 / 武器 / 特效</td>
+</tr>
+<tr>
+<td><code>Game.Boss</code></td>
+<td><code>BossController</code>、<code>BossVisuals</code>、<code>Pillar</code>、<code>CoverService</code>、<code>GroundBurst</code>、<code>SummonedWraith</code></td>
+<td>君主 AI / 白盒表演 / 掩体机制 / 召魂</td>
+</tr>
+<tr>
+<td><code>Game.VFX</code></td>
+<td><code>ProceduralMesh</code>、<code>TelegraphIndicator</code>、<code>GroundWave</code>、<code>RulingWave</code>、<code>ShrinkRing</code></td>
+<td>程序化网格预警与波</td>
+</tr>
+<tr>
+<td><code>Game.Feel</code></td>
+<td><code>FeelDirector</code>、<code>HitStop</code>、<code>FeelPostFx</code>、<code>ImpactVfx</code>、<code>ProceduralSfx</code></td>
+<td>打击感（顿帧 / 震屏 / 合成音 / 后处理）</td>
+</tr>
+<tr>
+<td><code>Game.Cameras</code></td>
+<td><code>ThirdPersonCamera</code></td>
+<td>自研过肩相机（trauma 震屏、演出推镜、锁定）</td>
+</tr>
+<tr>
+<td><code>Game.UI</code></td>
+<td><code>HudController</code>、<code>MatchStats</code>、<code>DebugHud</code>、<code>ArtSwitcherPanel</code></td>
+<td>UI Toolkit HUD / 结算统计 / 调试面板 / 美术切换</td>
+</tr>
+<tr>
+<td><code>Game.Narrative</code></td>
+<td><code>IntroDirector</code>、<code>ChainAnchor</code></td>
+<td>M8 开场叙事状态机</td>
+</tr>
+<tr>
+<td><code>Game.Demo</code></td>
+<td><code>DemoProtection</code></td>
+<td>F10 三档演示保护</td>
+</tr>
+<tr>
+<td><code>Game.Core.Editor</code></td>
+<td><code>UndeadMonarchArtTools</code></td>
+<td>亡魂预制体 / 配色编辑器工具</td>
+</tr>
+</tbody></table></div>
+<h4>A.3 场景根物件 → 组件（从场景 YAML 逐个解析）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>根物件</th>
+<th>组件</th>
+</tr></thead><tbody>
+<tr>
+<td><code>Player</code>（tag=Player）</td>
+<td>CharacterController、<strong>PlayerController / PlayerCombat / PlayerHealth / LockOnController / PlayerVisuals / PlayerVfx / PlayerModelAnimator / PlayerWeapon</strong>，另有残留的 MeshFilter + MeshRenderer</td>
+</tr>
+<tr>
+<td><code>Boss_Monarch</code></td>
+<td>CharacterController、<strong>BossVisuals、BossController</strong>（<strong>无 Animator，无 SkinnedMeshRenderer</strong>）</td>
+</tr>
+<tr>
+<td><code>Pillar_A_North / B_SouthWest / C_SouthEast</code></td>
+<td>MeshFilter + CapsuleCollider + MeshRenderer + <code>Pillar</code></td>
+</tr>
+<tr>
+<td><code>Chain_A/B/C</code>、<code>ChainCut_A/B/C</code></td>
+<td>MeshFilter / MeshRenderer + <code>ChainAnchor</code> ×3</td>
+</tr>
+<tr>
+<td><code>Feel</code></td>
+<td><code>FeelDirector</code> + <code>FeelPostFx</code></td>
+</tr>
+<tr>
+<td><code>GameFlow</code></td>
+<td><code>MatchStats</code> + <code>DemoProtection</code> + <code>IntroDirector</code></td>
+</tr>
+<tr>
+<td><code>HUD</code> / <code>ArtSwitcher</code></td>
+<td>UIDocument + <code>HudController</code> / <code>ArtSwitcherPanel</code></td>
+</tr>
+<tr>
+<td><code>Debug_HUD</code></td>
+<td><code>DebugHud</code></td>
+</tr>
+<tr>
+<td><code>Main Camera</code></td>
+<td>Camera + AudioListener + UniversalAdditionalCameraData + <code>ThirdPersonCamera</code></td>
+</tr>
+<tr>
+<td><code>Global Volume</code></td>
+<td>Volume（Bloom / Vignette / ColorAdjustments）</td>
+</tr>
+<tr>
+<td><code>Directional Light</code></td>
+<td>Light + UniversalAdditionalLightData</td>
+</tr>
+<tr>
+<td>其他</td>
+<td><code>Arena_Floor</code>、<code>Wall_<em></code>×5、<code>Corridor_</em></code>、<code>ArenaCenter</code> / <code>ArenaEntry</code> / <code>PlayerSpawn</code>（空标记点）</td>
+</tr>
+</tbody></table></div>
+<blockquote><strong>注意</strong>：这里<strong>没有 <code>GameManager</code>，也没有 <code>ObjectPool</code></strong>（那两个只存在于被弃用的 2D 工程）。全局职责由 <code>GameFlow</code> 上的三个组件分担，<strong>没有集中式状态机</strong>。</blockquote>
+<h4>A.4 包与工具链</h4>
+<p><strong>已安装</strong>：URP 17.3.0、Input System 1.20.0、Timeline 1.8.13、Test Framework 1.6.0、ugui 2.0（UI Toolkit）、AI Navigation 2.0.14、<strong>com.coplaydev.unity-mcp（MCP for Unity）</strong>。</p>
+<p><strong>未安装</strong>：<code>com.unity.cinemachine</code>、<code>com.unity.animation.rigging</code>、Addressables、任何 Tween 库。</p>
+<h4>A.5 战斗数据流</h4>
+<pre><code>输入(InputSystem_Actions.inputactions, Player Map, 16 Action)
+   ├─→ PlayerController / PlayerCombat / PlayerHealth / LockOnController
+   │        └─ 判定：Physics.OverlapSphere + 扇形角度（前摇结束那一帧 / Boss Active 阶段）
+   │                 └─→ DamageInfo + DamageFlags ──→ IDamageable
+   │                          ├─→ PlayerHealth（Demo保护→翻滚无敌帧→格挡→扣血）
+   │                          ├─→ BossController（演出/叙事免疫→受创倍率→阶段评估）
+   │                          ├─→ SummonedWraith
+   │                          └─→ Pillar / ChainAnchor
+   ├─→ BossController ─(Idle/Reposition/Windup/Active/Recover/Dead)
+   │        ├─→ BossVisuals（程序化姿势插值）
+   │        ├─→ GroundWave / RulingWave / GroundBurst
+   │        └─→ Pillar + CoverService（纯几何掩体判定，挡伤即碎裂）
+   └─→ FeelDirector（事件订阅，零 public 方法）─→ FeelPostFx / ImpactVfx / ProceduralSfx / ThirdPersonCamera.AddTrauma
+                                                      └─→ HudController（UI Toolkit，按元素名取值）</code></pre>
+<hr>
+<h3>B. Player 当前控制流程</h3>
+<p>Player 身上叠了 <strong>8 个 MonoBehaviour</strong>，控制流分三个平行层。</p>
+<h4>B.1 移动层 —— <code>PlayerController.cs</code>（495 行）</h4>
+<ul>
+<li><code>CharacterController</code> 驱动，<strong>每帧只调用一次 <code>Move()</code></strong>（水平 + 垂直 + 外力合并，<code>ApplyGravityAndMove</code> L445-L461）—— 为修 "移动中不能跳" 专门设计。</li>
+<li><strong>土狼时间</strong> <code>coyoteTime</code>（L432-L441）；跳跃<strong>不耗体力</strong>。</li>
+<li><strong>翻滚</strong>：<code>rollDistance</code> / <code>rollDuration</code> / 无敌帧窗口 / <code>rollStaminaCost</code>。</li>
+<li><strong>体力</strong>：max 100、<code>+25/s</code>、延迟 0.6s；<strong>只被翻滚消耗</strong>。</li>
+<li><strong>攻击前冲 <code>ApplyLunge</code></strong>：前快后慢曲线（<code>Lerp(1.25,0.35)/0.8</code> 保证位移 ≈ distance），可被翻滚取消。</li>
+<li><strong>三种"停手"语义</strong>：</li>
+<li><code>SetMovementBlocked</code> —— 攻击中锁移动，<strong>翻滚仍可用</strong></li>
+<li><code>SetMoveSpeedMultiplier</code> —— 格挡减速</li>
+<li><code>SetControlEnabled</code> —— 阵亡，全部失效</li>
+<li><strong><code>PushOut</code></strong>：外部推挤，与君主"体型分离"配合（避免一帧两次 Move 导致 <code>isGrounded</code> 闪烁）。</li>
+<li><strong>锁定转向</strong>：<code>SetLockOnTarget</code> 后角色恒面向君主，WASD 变绕行走位。</li>
+</ul>
+<p><strong>场景实测值</strong>：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>参数</th>
+<th>场景值</th>
+<th>C# 默认值</th>
+</tr></thead><tbody>
+<tr>
+<td>moveSpeed</td>
+<td>6</td>
+<td>6</td>
+</tr>
+<tr>
+<td>jumpHeight</td>
+<td>1.2</td>
+<td>1.2</td>
+</tr>
+<tr>
+<td>coyoteTime</td>
+<td>0.1</td>
+<td>0.1</td>
+</tr>
+<tr>
+<td><strong>rollDuration</strong></td>
+<td><strong>0.68</strong></td>
+<td>0.33</td>
+</tr>
+<tr>
+<td>rollInvulnerableFrom / To</td>
+<td>0.1 / 0.42</td>
+<td>0.03 / 0.31</td>
+</tr>
+<tr>
+<td>rollStaminaCost</td>
+<td>20</td>
+<td>20</td>
+</tr>
+</tbody></table></div>
+<blockquote>⚠️ <strong>场景才是运行时真值</strong>，改 C# 默认值对已存在的实例无效。</blockquote>
+<h4>B.2 出招层 —— <code>PlayerCombat.cs</code>（544 行）</h4>
+<ul>
+<li><strong>判定完全由计时器驱动</strong>：<code>Windup → 判定一次 → Recovery</code>，判定发生在<strong>前摇结束那一帧</strong>（L417-L428）。</li>
+<li><strong>输入缓冲 0.25s</strong>（<code>CaptureInput</code> L286-L316），优先级：大招 &gt; 重击 &gt; 普攻。</li>
+<li><strong>蓝条</strong>：100 上限、自然 <code>+2/s</code>、普攻每段命中 <code>+5</code>、开局满值。</li>
+<li><strong>削韧</strong>：只有重击/大招带 <code>DamageFlags.Stagger</code>（L385）。</li>
+<li><strong>翻滚取消后摇</strong>：<code>if (controller.IsRolling) EndAttack()</code> L271-L276 —— ARPG 手感关键。</li>
+<li>对外暴露只读查询接口供动画/VFX 层取样：<code>CurrentAttack</code> / <code>IsWindup</code> / <code>WindupNormalized</code> / <code>RecoveryNormalized</code> / <code>AttackNormalized</code> / <code>CurrentLungeDistance</code> / <code>IsInComboWindow</code>。</li>
+<li>事件：<code>OnAttackStarted</code> / <code>OnHitLanded</code>。</li>
+<li><code>RequestAttack()</code>（L499-L507）<strong>走与真实按键完全相同的管线</strong> —— 自动化标定机器人的入口。</li>
+</ul>
+<p><strong>场景实测数值</strong>：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>招式</th>
+<th>蓝耗</th>
+<th>windup</th>
+<th>recovery</th>
+<th>伤害</th>
+<th>半径</th>
+<th>前冲</th>
+</tr></thead><tbody>
+<tr>
+<td>普攻（3 段）</td>
+<td>0</td>
+<td>0.4</td>
+<td>0.42</td>
+<td>8</td>
+<td>1.7</td>
+<td>0.65m / 0.22s</td>
+</tr>
+<tr>
+<td>重击</td>
+<td>22</td>
+<td>0.72</td>
+<td>0.85</td>
+<td>26</td>
+<td>2.4</td>
+<td>1.3m / 0.42s</td>
+</tr>
+<tr>
+<td>大招（剑气）</td>
+<td>60</td>
+<td>0.85</td>
+<td>0.85</td>
+<td>180</td>
+<td>7（半角 90°）</td>
+<td>0.9m / 0.32s</td>
+</tr>
+</tbody></table></div>
+<h4>B.3 生存层 —— <code>PlayerHealth.cs</code>（521 行）</h4>
+<p>结算顺序（L382-L441）：<strong>演示保护 → 翻滚无敌帧 → 格挡 → 扣血 → 打断吟唱 → 死亡</strong>。</p>
+<p><strong>场景实测值</strong>：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>项</th>
+<th>值</th>
+</tr></thead><tbody>
+<tr>
+<td>maxHealth</td>
+<td>100</td>
+</tr>
+<tr>
+<td>格挡</td>
+<td>持续 1.2s / 减伤 70% / CD 15s / 移速 ×0.35</td>
+</tr>
+<tr>
+<td>治疗</td>
+<td>蓝 30 / 吟唱 2s / CD 12s / +40% / 被打断降到 4s</td>
+</tr>
+<tr>
+<td>autoRespawn</td>
+<td><strong>0（关闭，交由结算界面）</strong></td>
+</tr>
+</tbody></table></div>
+<p><code>IsBlocking &amp;&amp; !info.IsBlockable</code> 时格挡失效（裁决 / 地面波纹穿格挡）。</p>
+<h4>B.4 输入</h4>
+<ul>
+<li>走 <strong>Unity 6 工程级 <code>InputSystem.actions</code></strong>（<code>Assets/InputSystem_Actions.inputactions</code>）。</li>
+<li><code>Player</code> Map 含 16 个 Action：<code>Move</code> <code>Look</code> <code>Attack</code> <code>Interact</code> <code>Crouch</code> <code>Jump</code> <code>Previous</code> <code>Next</code> <code>Sprint</code> <code>LightAttack</code> <code>HeavyAttack</code> <code>Ultimate</code> <code>Block</code> <code>Heal</code> <code>Dodge</code> <code>LockOn</code>。</li>
+<li><strong>工程是 Input System-only</strong>（禁止旧版 <code>UnityEngine.Input</code>）。</li>
+<li><strong>没有 <code>PlayerInput</code> 组件，没有集中的输入路由层</strong> —— 每个脚本各自 <code>asset.FindAction("Player/XXX")</code> 并自行 <code>Enable/Disable</code>。</li>
+</ul>
+<hr>
+<h3>C. Boss 当前控制流程</h3>
+<p><strong><code>BossController.cs</code>（1606 行）</strong> 是全工程最大的单文件。</p>
+<h4>C.1 Update 优先级（L461-L531）</h4>
+<pre><code>TickCooldowns / EnforceSeparation        ← 永远执行
+  → !IsAlive: return
+  → !CombatEnabled（开场叙事中）：仅面向玩家，不出招不受伤
+  → IsTransitioning（P2 演出）：站定无敌
+  → IsCharging（裁决）：UpdateRuling        【会打断当前招式】
+  → 到点：BeginRuling
+  → IsStaggered：站定（玩家的白打窗口）
+  → switch(State): Idle / Reposition / Windup / Active / Recover</code></pre>
+<h4>C.2 招式表</h4>
+<p><code>BossMove</code> 是 <code>[Serializable]</code> 类 + 场景数组；<code>EnsureMoves()</code>（L393-L439）在数组为空时填 GDD §5.2 默认值。</p>
+<div class="tw"><table>
+<thead><tr>
+<th>招式</th>
+<th>前摇</th>
+<th>判定</th>
+<th>后摇</th>
+<th>CD</th>
+<th>伤害</th>
+<th>判定形状</th>
+<th>备注</th>
+</tr></thead><tbody>
+<tr>
+<td>横扫 Sweep</td>
+<td>0.8</td>
+<td>0.2</td>
+<td>0.55</td>
+<td>8</td>
+<td>16</td>
+<td>扇形 R4 ±90°</td>
+<td></td>
+</tr>
+<tr>
+<td>突刺 Thrust</td>
+<td>1.0</td>
+<td>0.32</td>
+<td>0.6</td>
+<td>10</td>
+<td>20</td>
+<td>直线 8m×2.2 + 7m 冲刺</td>
+<td>Active 期间<strong>连续判定</strong></td>
+</tr>
+<tr>
+<td>跳劈 LeapSlam</td>
+<td>0.9</td>
+<td>0.45</td>
+<td>0.7</td>
+<td>12</td>
+<td>24</td>
+<td>落点圆 R3.6</td>
+<td>抛物线弧高 3.2</td>
+</tr>
+<tr>
+<td>地面波纹 GroundWave</td>
+<td>1.0</td>
+<td>0.25</td>
+<td>0.8</td>
+<td>14</td>
+<td>14</td>
+<td>外扩环</td>
+<td><strong>Unblockable</strong>，可跳可滚</td>
+</tr>
+<tr>
+<td>召魂 Summon</td>
+<td>1.6</td>
+<td>0.2</td>
+<td>0.8</td>
+<td>16</td>
+<td>12</td>
+<td>3 个爆点</td>
+<td><strong>仅 P2</strong></td>
+</tr>
+</tbody></table></div>
+<ul>
+<li><strong>选招</strong> <code>SelectMove</code>（L669-L729）：过滤（冷却 / P2 限定 / 距离区间 / <strong>不能连出同一招</strong>）× 距离接近度加权 → 轮盘赌。</li>
+<li><strong>设计底线被执行得很好</strong>：<code>StartWindup</code>（L744-L752）<strong>在前摇开始时锁定方向</strong>；<code>SpawnTelegraph</code> 画出<strong>与真实判定同形</strong>的预警；<code>MoveTime()</code>（L973-L976）在 P2 提速时<strong>同步缩短预警</strong>，保证"预警 = 真实前摇"。</li>
+</ul>
+<h4>C.3 阶段机</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>阶段</th>
+<th>血量</th>
+<th>行为</th>
+</tr></thead><tbody>
+<tr>
+<td>P0 试探</td>
+<td>100% → 80%</td>
+<td><code>NextRulingTime = float.MaxValue</code>，<strong>不排裁决</strong>（教学期）</td>
+</tr>
+<tr>
+<td>P1 裁决</td>
+<td>80% → 50%</td>
+<td>5s 后首次裁决，此后固定 40s</td>
+</tr>
+<tr>
+<td>P2 终局</td>
+<td>50% → 0%</td>
+<td>2.5s <strong>无敌</strong>演出 + <code>UnlockPhase2(1.15)</code> 提速 + 解锁召魂</td>
+</tr>
+</tbody></table></div>
+<p>场景值：<code>maxHealth: 3050</code>、<code>p1Threshold: 0.8</code>、<code>p2Threshold: 0.5</code>、<code>p1FirstRulingDelay: 5</code>、<code>transitionDuration: 2.5</code>、<code>p2SpeedMultiplier: 1.15</code>。</p>
+<h4>C.4 「裁决」三段（L1117-L1273）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>阶段</th>
+<th>时长</th>
+<th>行为</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ReturnToCenter</code></td>
+<td>0.8s</td>
+<td>冲刺回 <code>ArenaCenter</code>（速度 <code>max(8, 距离/0.8)</code>），保持面向玩家</td>
+</tr>
+<tr>
+<td><code>Charge</code></td>
+<td>4.0s</td>
+<td>站定；<code>DamageTakenMultiplier = 0.67</code>；地面 <code>ShrinkRing</code> 从 9m 缩到 1.4m</td>
+</tr>
+<tr>
+<td><code>Release</code></td>
+<td>—</td>
+<td><code>RulingWave</code>：`Unblockable \</td>
+</tr>
+</tbody></table></div>
+<p>其他参数：<code>rulingInterval: 40</code>、<code>rulingChargeDamageMultiplier: 0.67</code>、<code>rulingDamagePercent: 0.95</code>、<code>rulingWaveSpeed: 22</code>。</p>
+<h4>C.5 掩体机制</h4>
+<p><code>CoverService.IsCovered</code>（纯几何，103 行）：</p>
+<li class="num" data-n="1">君主→玩家连线到柱心距离 ≤ <code>1.2 + 0.5m</code> <strong>且柱子确实在两者之间</strong>；</li>
+<li class="num" data-n="2">柱后 ±25° 扇区，且玩家比柱更远；</li>
+<li class="num" data-n="3">多柱同时遮挡时取<strong>离玩家最近</strong>的那根（只有它碎裂）。</li>
+<p><code>RulingWave.cs:162</code> 回调 <code>cover.Break()</code>。</p>
+<h4>C.6 削韧 / 打断</h4>
+<p><code>TryStagger()</code>（L1445-L1484）：</p>
+<ul>
+<li>只有 <code>DamageFlags.Stagger</code>（重击/大招）命中，且 <code>State</code> 为 <code>Windup</code> / <code>Active</code> 才生效；</li>
+<li><code>staggerDuration: 0.9</code>、<code>staggerCooldown: 6</code>；</li>
+<li><strong>裁决蓄力与 P2 转阶段不可打断</strong>。</li>
+</ul>
+<h4>C.7 体型分离</h4>
+<p><code>EnforceSeparation</code>（L549-L575）：间距 &lt; <code>minSeparation: 1.6m</code> 时，<strong>70% 推玩家（<code>separationPlayerShare</code>）、30% 推自己</strong>。</p>
+<h4>C.8 受创与死亡</h4>
+<p><code>TakeDamage</code>（L1396-L1437）：<code>IsTransitioning</code> 或 <code>!CombatEnabled</code> 时免疫 → 乘 <code>DamageTakenMultiplier</code> → <code>visuals.FlashHit()</code> → <code>EvaluatePhase()</code>。</p>
+<p><code>Die()</code> → <code>OnDefeated</code>。</p>
+<h4>C.9 Boss 的"动画" = <code>BossVisuals.cs</code>（246 行）</h4>
+<p>对 <code>weaponPivot</code> 做 <code>RotateTowards</code> + <code>MoveTowards</code> 插值到预设欧拉角：</p>
+<ul>
+<li><code>PlayIdle()</code> / <code>PlayWindup(kind, duration)</code> / <code>PlayStrike(kind)</code></li>
+<li><code>FlashHit()</code> 闪白（0.12s）</li>
+<li><code>SetChargeGlow(bool)</code> 蓄力辉光（<code>PingPong</code> 脉冲）</li>
+<li>颜色走 <code>MaterialPropertyBlock</code> 写 <code>_BaseColor</code> / <code>_Color</code></li>
+</ul>
+<hr>
+<h3>D. 当前动画系统状态</h3>
+<p>这是全项目<strong>变化最大</strong>的一块 —— 9/18 刚接入了正式模型。</p>
+<h4>D.1 现状总表</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>项</th>
+<th>状态</th>
+<th>位置</th>
+</tr></thead><tbody>
+<tr>
+<td>Animator Controller</td>
+<td>✅ <strong>1 个</strong>：<code>Assets/_Game/Animation/PlayerHumanoid.controller</code>（22,256 B，<strong>26 个 State</strong>）</td>
+<td>玩家专用</td>
+</tr>
+<tr>
+<td>Animator 参数</td>
+<td>❌ <strong><code>m_AnimatorParameters: []</code> —— 零参数、零 transition 条件</strong></td>
+<td>同上</td>
+</tr>
+<tr>
+<td>Avatar</td>
+<td>✅ 全部 <strong>Humanoid</strong>（<code>animationType=3, avatarSetup=1</code>）：PicoChan、Security Officer、Blink、DoubleL</td>
+<td>各 <code>.fbx.meta</code></td>
+</tr>
+<tr>
+<td>场景内的 Animator 组件</td>
+<td>❌ <strong>一个都没有</strong>（Boss 也没有）。玩家的 Animator 由 <code>PlayerModelAnimator.BuildModel()</code> 在 <code>Awake</code> 里 <strong><code>AddComponent&lt;Animator&gt;()</code> + <code>Rebind()</code> 运行时创建</strong></td>
+<td><code>PlayerModelAnimator.cs:254-L270</code></td>
+</tr>
+<tr>
+<td>Animation Rigging</td>
+<td>❌ <strong>包未安装</strong></td>
+<td><code>Packages/manifest.json</code></td>
+</tr>
+<tr>
+<td>Cinemachine</td>
+<td>❌ <strong>包未安装</strong>（<code>ThirdPersonCamera</code> 注释称"已安装"是<strong>错误注释</strong>）</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>骨骼动画（玩家）</td>
+<td>✅ 外部模型自带</td>
+<td>—</td>
+</tr>
+<tr>
+<td>骨骼动画（Boss）</td>
+<td>❌ <strong>完全没有</strong>，纯旋转插值</td>
+<td><code>BossVisuals.cs</code></td>
+</tr>
+</tbody></table></div>
+<h4>D.2 驱动方式（关键设计）</h4>
+<p><code>PlayerModelAnimator.cs</code>（794 行）<strong>不使用 Animator 状态机</strong>。它把 controller 当成<strong>按状态名寻址的片段播放器</strong>：</p>
+<pre><code>animator.CrossFadeInFixedTime(stateName, 0.06f, 0, 0f);  // L757
+animator.speed = speed;                                   // L766</code></pre>
+<p><code>speed</code> 由 <strong><code>片段时长 ÷ 该状态应有的时长</code></strong> 反算（L657-L675），于是 1.07s 的挥砍被压进 0.4s 的轻击窗口。攻击时更进一步<strong>分两段给倍率</strong>：</p>
+<ul>
+<li><strong>前摇段</strong>：让片段 <code>[0, contactFraction]</code> 正好演完前摇；</li>
+<li><strong>收招段</strong>：只演 <code>recoveryPortion</code>（默认 0.45），跳过片段尾部的静态收势。</li>
+</ul>
+<p>效果：<strong>判定帧被钉死在接触帧上</strong>，同时保留片段内部的"前摇慢、出刀快"节奏（匀速压缩会把它压平）。</p>
+<blockquote>这与 <code>PROJECT_STATE.md §6</code> 的硬约束一致：<strong>判定走计时器，不走动画事件</strong>。</blockquote>
+<h4>D.3 状态 → 片段对照（从 controller YAML 与 FBX meta 逐条解析）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>状态名</th>
+<th>来源片段</th>
+<th>代码是否使用</th>
+</tr></thead><tbody>
+<tr>
+<td><code>Idle</code></td>
+<td>Blink <code>Idle</code></td>
+<td>✅ 非锁定待机</td>
+</tr>
+<tr>
+<td><code>IdleCombat</code></td>
+<td>Blink <code>IdleCombat</code></td>
+<td>✅ 锁定待机</td>
+</tr>
+<tr>
+<td><code>Run</code></td>
+<td>Blink <code>RunForward</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>StrafeLeft</code> / <code>StrafeRight</code></td>
+<td>Blink <code>StrafeLeft</code> / <code>StrafeRight</code></td>
+<td>✅ 锁定侧移</td>
+</tr>
+<tr>
+<td><code>RollForward</code></td>
+<td>Blink <code>RollForward</code></td>
+<td>✅ 翻滚</td>
+</tr>
+<tr>
+<td><code>RollBackward</code></td>
+<td>Blink <code>RollBackward</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>JumpUp</code> / <code>JumpDown</code></td>
+<td>Blink <code>Jumps</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Fall</code></td>
+<td>Blink <code>FallingLoop</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Death</code></td>
+<td>Blink <code>Death</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>Hit</code></td>
+<td>Blink <code>GetHit</code></td>
+<td>✅ 受击</td>
+</tr>
+<tr>
+<td><code>HitB5</code></td>
+<td>DoubleL <code>Hit_B_5</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Stunned</code></td>
+<td>Blink <code>StunnedLoop</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Block</code></td>
+<td>Blink <code>BlockingLoop</code></td>
+<td>✅ 格挡</td>
+</tr>
+<tr>
+<td><code>CastLoop</code></td>
+<td>Blink <code>CastingLoop</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Buff</code></td>
+<td>Blink <code>Buff</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong><code>AttackA1</code> / <code>AttackA2</code> / <code>AttackA3</code></strong></td>
+<td><strong>DoubleL <code>1Hand_Up_Attack_A_1/2/3</code></strong></td>
+<td>✅ <strong>三段普攻</strong></td>
+</tr>
+<tr>
+<td><strong><code>AttackB1</code></strong></td>
+<td><strong>DoubleL <code>1Hand_Up_Attack_B_1</code></strong></td>
+<td>✅ <strong>代码里重击用它</strong></td>
+</tr>
+<tr>
+<td><code>AttackHeavy</code></td>
+<td>Blink <code>MeleeAttack_TwoHanded</code></td>
+<td>❌（仅被 attackProfiles 引用，见 G1-1）</td>
+</tr>
+<tr>
+<td><code>AttackLight1</code> / <code>AttackLight2</code></td>
+<td>Blink <code>MeleeAttack_OneHanded</code></td>
+<td>❌</td>
+</tr>
+<tr>
+<td><code>AttackLight3</code></td>
+<td>Blink <code>MeleeAttack_TwoHanded</code></td>
+<td>❌</td>
+</tr>
+<tr>
+<td><code>AttackUltimate</code></td>
+<td>Blink <code>SpellCast</code></td>
+<td>✅ 大招，<strong>也复用于治疗吟唱</strong></td>
+</tr>
+</tbody></table></div>
+<p>代码实际引用的状态名（<code>PlayerModelAnimator.cs</code>）：<code>Idle</code> <code>IdleCombat</code> <code>Run</code> <code>StrafeLeft</code> <code>StrafeRight</code> <code>AttackA1/A2/A3</code> <code>AttackB1</code> <code>AttackUltimate</code> <code>Block</code> <code>Hit</code> <code>Death</code> <code>RollForward</code> —— <strong>全部存在于 controller</strong>。</p>
+<h4>D.4 模型与武器现状</h4>
+<p><strong>场景 <code>PlayerModelAnimator.modelOptions</code> 配了 2 个模型，<code>activeModel: 0</code></strong>：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>显示名</th>
+<th>来源</th>
+<th>nativeHeight</th>
+<th>alignSole</th>
+<th>controller</th>
+</tr></thead><tbody>
+<tr>
+<td>皮可酱 PicoChan</td>
+<td>Picola Inc / PicoChan（Asset Store，免费）</td>
+<td>1.504</td>
+<td>1</td>
+<td>PlayerHumanoid</td>
+</tr>
+<tr>
+<td>女警 Officer</td>
+<td>JBlue / Anime Character Security Officer</td>
+<td>1.7</td>
+<td>1</td>
+<td>PlayerHumanoid</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>两者共用 <code>PlayerHumanoid.controller</code>，靠 Avatar 重定向。</li>
+<li><strong>KayKit 已被移除</strong>（备份目录 <code>D:\Unity\_KayKitRemoved_20260918_051059</code>）；<code>Assets/_Game/Models/KayKit</code> 现在只剩空文件夹 meta。</li>
+</ul>
+<p><strong>武器已是大剑</strong>：</p>
+<ul>
+<li><code>Assets/_Game/Models/Weapons/Greatsword_FrozenNight.prefab</code> + <code>_Mesh.asset</code>（78 KB）+ <code>M_Greatsword_FrozenNight.mat</code></li>
+<li>场景 <code>PlayerWeapon</code> 配置：<code>lengthRatio 0.89</code>、<code>gripEuler (-90,0,0)</code>、<code>stowOnBack 1</code>、<code>backOffsetInLengths (0, 0.16, -0.12)</code>、<code>stowDelay 0.35</code></li>
+</ul>
+<p><code>PlayerWeapon.AttachTo()</code> 的做法：</p>
+<ul>
+<li>Humanoid 走 <code>GetBoneTransform(HumanBodyBones.RightHand)</code>，Generic 回落到 <code>handslot.r</code>；</li>
+<li><strong>按手骨骼 <code>lossyScale</code> 反算 <code>localScale</code></strong>，保证武器在任何模型上世界尺寸一致；</li>
+<li>挂点偏移用"武器长度的倍数"表达，换模型/换武器都不用重调。</li>
+</ul>
+<p><strong>双外观系统并存</strong>：<code>PlayerVisuals.cs</code>（34 KB，程序化人形：<code>hips/spine/neck/head/左右臂/左右腿</code> + <code>bladeTip/bladeBase</code>，全部由 <code>GameObject.CreatePrimitive</code> 拼装）<strong>仍挂在 Player 上</strong>，被 <code>PlayerModelAnimator.EnsureProceduralHidden()</code> <strong>每帧 <code>LateUpdate</code> 无条件关掉 <code>Visual</code> 子节点</strong>（L508-L520）。</p>
+<hr>
+<h3>E. 当前战斗系统状态</h3>
+<h4>E.1 已打通的完整闭环</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>系统</th>
+<th>状态</th>
+<th>位置</th>
+</tr></thead><tbody>
+<tr>
+<td>伤害契约</td>
+<td>✅ <code>DamageInfo</code>(readonly struct) + <code>DamageFlags</code>[Flags] + <code>IDamageable</code></td>
+<td><code>DamageInfo.cs</code></td>
+</tr>
+<tr>
+<td>玩家三段普攻</td>
+<td>✅ 计时器驱动、连段窗口、命中回蓝</td>
+<td><code>PlayerCombat.cs</code></td>
+</tr>
+<tr>
+<td>重击 / 大招</td>
+<td>✅ 耗蓝 + 削韧 + 前冲</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>双资源（体力/蓝）</td>
+<td>✅ 互不耦合</td>
+<td><code>PlayerController</code> + <code>PlayerCombat</code></td>
+</tr>
+<tr>
+<td>格挡 / 治疗</td>
+<td>✅ 含"与格挡互斥""被打断缩短冷却"</td>
+<td><code>PlayerHealth.cs</code></td>
+</tr>
+<tr>
+<td>翻滚无敌帧</td>
+<td>✅ 窗口化（0.1–0.42s）</td>
+<td><code>PlayerController</code></td>
+</tr>
+<tr>
+<td>Boss 5 招 + 预警</td>
+<td>✅ 预警形状 = 真实判定</td>
+<td><code>BossController</code> + <code>TelegraphIndicator</code></td>
+</tr>
+<tr>
+<td>阶段机 P0/P1/P2</td>
+<td>✅ 含 P2 无敌演出与提速 1.15</td>
+<td><code>BossController</code></td>
+</tr>
+<tr>
+<td>裁决 + 掩体 + 柱碎</td>
+<td>✅ 纯几何判定、挡伤柱才碎</td>
+<td><code>CoverService</code> + <code>Pillar</code> + <code>RulingWave</code></td>
+</tr>
+<tr>
+<td>削韧打断</td>
+<td>✅ 0.9s 硬直 / 6s CD</td>
+<td><code>BossController.TryStagger</code></td>
+</tr>
+<tr>
+<td>召魂 + 亡魂</td>
+<td>✅ 3 爆点 + 亡魂 AI（HP16 / 攻6 / 15s）</td>
+<td><code>GroundBurst</code> + <code>SummonedWraith</code></td>
+</tr>
+<tr>
+<td>打击感</td>
+<td>✅ 顿帧 / trauma 震屏 / 13 条程序化音效 / 火花 / 冲击环 / 后处理脉冲</td>
+<td><code>FeelDirector</code> 等 5 个文件</td>
+</tr>
+<tr>
+<td>玩家刀光</td>
+<td>✅ 新月弧网格 + 手绘贴图序列 + <strong>跟随真实剑尖的拖尾</strong> + 可切换斩击风格</td>
+<td><code>PlayerVfx.cs</code>（39 KB）</td>
+</tr>
+<tr>
+<td>UI Toolkit HUD</td>
+<td>✅ 元素名契约 36 个</td>
+<td><code>Hud.uxml</code> + <code>HudController</code></td>
+</tr>
+<tr>
+<td>演示保护</td>
+<td>✅ F10 三档 Flags</td>
+<td><code>DemoProtection.cs</code></td>
+</tr>
+<tr>
+<td>开场叙事</td>
+<td>✅ 6 态状态机</td>
+<td><code>IntroDirector.cs</code></td>
+</tr>
+<tr>
+<td>结算统计</td>
+<td>✅ 用时 / 柱数 / 翻滚 / 大招 / 治疗</td>
+<td><code>MatchStats.cs</code></td>
+</tr>
+<tr>
+<td>打包</td>
+<td>✅ <code>Build/UndeadMonarch.exe</code></td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h4>E.2 Hitbox / Hurtbox 的真实答案</h4>
+<p><strong>不存在任何 Hitbox / Hurtbox 组件。</strong></p>
+<p>全项目只有一种判定模式：</p>
+<pre><code>Physics.OverlapSphere(origin, radius, targetLayers, QueryTriggerInteraction.Collide);
+// + Vector3.Angle(facing, toTarget) &gt; halfAngle 的扇形过滤
+// + collider.GetComponentInParent&lt;IDamageable&gt;()
+// + collider.transform.IsChildOf(transform) 排除自己
+// + HashSet&lt;IDamageable&gt; 保证一次招式只打中一次</code></pre>
+<p>出现位置（共 5 处）：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>文件</th>
+<th>行</th>
+</tr></thead><tbody>
+<tr>
+<td><code>PlayerCombat.ResolveHit</code></td>
+<td>L459-L492</td>
+</tr>
+<tr>
+<td><code>BossController.DealDamage</code></td>
+<td>L1282-L1320</td>
+</tr>
+<tr>
+<td><code>GroundWave</code></td>
+<td>L170</td>
+</tr>
+<tr>
+<td><code>GroundBurst</code></td>
+<td>L118-L137</td>
+</tr>
+<tr>
+<td><code>SummonedWraith.ResolveAttack</code></td>
+<td>L146-L185</td>
+</tr>
+</tbody></table></div>
+<p><strong>LayerMask 全部是默认全开</strong>（场景 <code>PlayerCombat.targetLayers.m_Bits = 4294967295</code>），<strong>没有配置任何 Layer</strong>；自伤靠 <code>IsChildOf</code> 排除，亡魂靠 <code>CompareTag("Player")</code> 排除君主。</p>
+<h4>E.3 伤害标记实际使用情况</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>来源</th>
+<th>DamageFlags</th>
+</tr></thead><tbody>
+<tr>
+<td>玩家普攻</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td>玩家重击 / 大招</td>
+<td><code>Stagger</code></td>
+</tr>
+<tr>
+<td>Boss 横扫 / 突刺 / 跳劈</td>
+<td><code>None</code>（场景 <code>unblockable: 0</code>）</td>
+</tr>
+<tr>
+<td>Boss 地面波纹</td>
+<td><code>Unblockable</code></td>
+</tr>
+<tr>
+<td>召魂爆点</td>
+<td><code>Unblockable</code></td>
+</tr>
+<tr>
+<td><strong>裁决</strong></td>
+<td>`Unblockable \</td>
+</tr>
+</tbody></table></div>
+<h4>E.4 已实现 vs GDD 的缺口</h4>
+<p>GDD §4.1 写了「<strong>处决</strong>：破防时左键、演出 1.5s、固定 120 伤害」，但<strong>全工程没有破防值 / 处决系统</strong>（grep <code>处决|Execute|破防</code> 零命中）。</p>
+<hr>
+<h3>F. 可以直接复用的代码</h3>
+<h4>F.1 A 档 · 契约层 —— 别改，只扩展</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>资产</th>
+<th>为什么</th>
+</tr></thead><tbody>
+<tr>
+<td><code>DamageInfo</code> + <code>DamageFlags</code> + <code>IDamageable</code></td>
+<td>玩家、Boss、亡魂、锁链、训练靶<strong>五方共用</strong>的唯一伤害契约。要加新伤害类型（元素/暴击/吸血）就在 <code>DamageFlags</code> 旁扩展字段，<strong>不要另起一套</strong></td>
+</tr>
+<tr>
+<td><code>ThirdPersonCamera</code> 的 5 个语义接口</td>
+<td><code>AddTrauma</code> / <code>SetCinematicFocus</code> / <code>ClearCinematicFocus</code> / <code>SetLockOnTarget</code> / <code>ClearLockOnTarget</code> —— 换 Cinemachine 时只要保持这 5 个语义，调用方一行不用动</td>
+</tr>
+<tr>
+<td><code>ProceduralSfx.SfxId</code> 枚举（13 条）</td>
+<td>换真音效只需替换 <code>Get(SfxId)</code> 实现，调用点集中在 <code>FeelDirector</code></td>
+</tr>
+<tr>
+<td><code>HudController</code> 的 UI 元素名契约</td>
+<td><code>boss-fill</code> / <code>ruling-tick</code> / <code>pillar-0..2</code> / <code>hp-fill</code> / <code>stamina-fill</code> / <code>mana-fill</code> / <code>mana-tick</code> / <code>guard-text</code> / <code>heal-text</code> / <code>center-warning</code> / <code>subtitle-block</code> / <code>objective-block</code> / <code>lockon-indicator</code> / <code>result-panel</code> —— <strong>改 name 必须同步改代码</strong></td>
+</tr>
+<tr>
+<td><code>BossVisuals</code> 的 3 个 Transform 引用</td>
+<td><code>bodyRoot</code> / <code>weaponPivot</code> / <code>crownRoot</code> —— 换 Boss 模型时保留这三个名字即可</td>
+</tr>
+</tbody></table></div>
+<h4>F.2 B 档 · 框架层 —— 直接拿来用或小幅扩展</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>资产</th>
+<th>复用价值</th>
+</tr></thead><tbody>
+<tr>
+<td><code>PlayerController</code></td>
+<td><strong>已经是合格的 ARPG 移动控制器</strong>：单次 Move、土狼时间、窗口化无敌帧、体力、前冲曲线、锁定转向、外部推挤。做"MMO 风格"只需加走/跑速度档、冲刺——<strong>不要重写</strong></td>
+</tr>
+<tr>
+<td><code>PlayerCombat</code> + 输入缓冲 + 事件</td>
+<td>连段窗口、预输入、耗蓝校验、<code>RequestAttack()</code> 机器人入口都是通用件。扩成"技能栏"只需把 <code>AttackKind</code> 枚举换成 <code>SkillDefinition</code> 列表，管线本身可留</td>
+</tr>
+<tr>
+<td><code>PlayerHealth</code></td>
+<td>格挡/治疗/吟唱打断/复活，MMO 式生存逻辑基本齐了</td>
+</tr>
+<tr>
+<td><code>BossController</code> 的 <strong>windup→active→recover 骨架 + 加权选招 + 冷却数组</strong></td>
+<td><strong>可直接复用的 Boss 框架</strong>。加第 6/7 招只是往 <code>moves</code> 数组加 <code>BossMove</code>；<code>ForceCast()</code> 已提供调试/测试入口</td>
+</tr>
+<tr>
+<td>阶段机 + <code>DamageTakenMultiplier</code> + <code>SpeedMultiplier</code> + <code>MoveTime()</code></td>
+<td>阶段演出 / 无敌 / 提速的通用写法</td>
+</tr>
+<tr>
+<td><code>Pillar</code> + <code>CoverService</code></td>
+<td><strong>纯几何、无物理依赖、可单元测试</strong> —— "掩体经济"是好设计，未来做多 Boss 或新机制可直接搬</td>
+</tr>
+<tr>
+<td><code>TelegraphIndicator</code> + <code>ProceduralMesh</code></td>
+<td>零美术依赖的预警系统，<strong>新招式不用等美术就能上</strong></td>
+</tr>
+<tr>
+<td><code>GroundWave</code> / <code>RulingWave</code> / <code>ShrinkRing</code></td>
+<td>三种可扩散/收缩的 AOE 载体</td>
+</tr>
+<tr>
+<td><code>FeelDirector</code>（全事件订阅，<strong>零 public 方法</strong>）</td>
+<td>「战斗系统只发事件、表现层集中一处」分层干净。加新打击感只改它</td>
+</tr>
+<tr>
+<td><code>HitStop</code> / <code>FeelPostFx</code> / <code>ImpactVfx</code></td>
+<td>即插即用</td>
+</tr>
+<tr>
+<td><code>LockOnController</code></td>
+<td>Tab 切换式锁定，已联动相机 + 角色朝向 + HUD</td>
+</tr>
+<tr>
+<td><code>DemoProtection</code> / <code>MatchStats</code> / <code>DebugHud</code></td>
+<td>演示与统计的现成基建</td>
+</tr>
+<tr>
+<td><code>PlayerWeapon</code></td>
+<td><strong>按身高比例 + 手骨骼缩放反算</strong>的通用挂武器方案</td>
+</tr>
+<tr>
+<td><code>PlayerModelAnimator</code> 的多模型切换 + 自动落地 + 分阶段倍率</td>
+<td>换角色/换攻击片段的工作流已跑通</td>
+</tr>
+</tbody></table></div>
+<h4>F.3 C 档 · 白盒一次性 —— 接正式美术时会被替换</h4>
+<p><code>BossVisuals</code> 的姿势逻辑（保留接口，实现换成 Animator）、<code>PlayerVisuals</code> 的整个程序化人形、<code>ProceduralSfx</code> 的合成算法、<code>GroundBurst</code> 里的胶囊占位亡魂、<code>Pillar.SpawnDebris</code> 的方块碎石。</p>
+<hr>
+<h3>G. 存在的问题</h3>
+<h4>G1 · 真实代码缺陷（有明确证据）</h4>
+<li class="num" data-n="1"><strong><code>AttackClipProfile</code> 键名对不上，重击的调参是死的。</strong></li>
+<p><code>PlayerModelAnimator.cs:637</code> 重击用 <code>state = "AttackB1"</code>，<code>ContactFraction("AttackB1")</code> 查不到 profile → 回落默认 <code>0.40</code>；但场景 <code>attackProfiles</code> 里配的是 <strong><code>AttackHeavy: contactFraction 0.45</code></strong>。<strong>0.45 这个值从未生效。</strong></p>
+<li class="num" data-n="2"><strong>重击片段与三段普攻片段来源不同，双手剑动作不统一。</strong></li>
+<p>三段普攻 = DoubleL <strong>单手</strong> <code>1Hand_Up_Attack_A_1/2/3</code>；重击（B1）= DoubleL <strong>单手</strong> <code>1Hand_Up_Attack_B_1</code>；只有 <code>AttackHeavy</code>（未使用）才是 Blink 的 <code>MeleeAttack_TwoHanded</code>。<strong>玩家拿着大剑，却在播单手剑连段。</strong></p>
+<li class="num" data-n="3"><strong>两个玩家外观系统并存，靠"每帧关掉另一个"维系。</strong></li>
+<p><code>PlayerVisuals</code> 与 <code>PlayerModelAnimator</code> 同挂 Player；后者在 <code>LateUpdate</code> 里 <code>EnsureProceduralHidden()</code> <strong>每帧</strong>查询并 <code>SetActive(false)</code>。注释也承认"<code>PlayerVisuals</code> 在它自己的 <code>Awake</code> 里才构建 <code>Visual</code> 节点，执行顺序不定"。脆弱的顺序耦合。</p>
+<li class="num" data-n="4"><strong>Boss 完全没有动画。</strong> <code>Boss_Monarch</code> 无 Animator、无 SkinnedMeshRenderer。<strong>"亡灵君主"的正式美术接入是零起步工程。</strong></li>
+<li class="num" data-n="5"><strong>Animator 靠字符串状态名驱动，无编译期保护。</strong> 拼错状态名 → <code>CrossFadeInFixedTime</code> 静默失败，角色定格。<code>m_AnimatorParameters: []</code> 意味着<strong>无法用参数/触发器</strong>，只能拼字符串。</li>
+<li class="num" data-n="6"><strong>判定层没有 Layer 配置。</strong> 所有 <code>OverlapSphere</code> 的 LayerMask 都是 Everything，靠 <code>IsChildOf</code> 和 <code>CompareTag("Player")</code> 排除。加入任何新单位（第二个敌人、可破坏物、召唤物）时<strong>必须显式排除</strong>，否则立刻出现自伤/误伤。<strong>这是"还没规模化就埋下的坑"。</strong></li>
+<li class="num" data-n="7"><strong>场景与 C# 默认值大面积不一致，且没有数据资产层。</strong></li>
+<p>例：<code>PlayerCombat.lightWindup</code> C# 默认 <code>0.12</code> vs 场景 <code>0.4</code>；<code>PlayerController.rollDuration</code> 默认 <code>0.33</code> vs 场景 <code>0.68</code>。GDD §10 声称"资源参数走 ScriptableObject"，但 <code>Assets/_Game</code> 下<strong>只有 2 个 .asset</strong>（PanelSettings 与大剑 Mesh），<strong>没有任何技能/阶段数据资产</strong> —— 改数值必须打开场景。</p>
+<li class="num" data-n="8"><strong>硬编码的名字/标签查找。</strong></li>
+<ul>
+<li><code>BossController.Awake</code> L370：<code>GameObject.FindGameObjectWithTag("Player")</code></li>
+<li><code>SummonedWraith.Awake</code> L59：同上</li>
+<li><code>LockOnController</code> L57/L62：<code>FindObjectOfType&lt;BossController&gt;()</code> / <code>FindObjectOfType&lt;HudController&gt;()</code></li>
+<li><code>PlayerHealth</code> L156：<code>GameObject.Find("PlayerSpawn")</code></li>
+<li><code>BossController</code> L384：<code>GameObject.Find("ArenaCenter")</code></li>
+</ul>
+<p>改名/改层级就会静默失效。</p>
+<li class="num" data-n="9"><strong>静态列表的初始化顺序问题仍然存在。</strong></li>
+<p><code>Pillar.All</code> 由 <code>OnEnable</code> 填充，与 <code>Awake</code> 顺序不定（<code>PROJECT_STATE §8.1</code> 记录过实测错误"剩余石柱 3/1"，<code>HudController</code> 里已改用 <code>FindObjectsOfType&lt;Pillar&gt;()</code> 绕过）。<strong>根因没修，只是绕开了。</strong></p>
+<li class="num" data-n="10"><strong><code>TryPlayHit(float dt)</code> 的参数 <code>dt</code> 从未使用</strong>，且用"<code>TimeSinceLastDamage</code> 变小"来推断"又挨打了"（L596-L601）。顿帧会改 <code>timeScale</code>，多来源同帧伤害也会漏判。</li>
+<li class="num" data-n="11"><strong><code>TryPlayHeal</code> 硬编码了 2.0 秒</strong>（<code>ClipLength("AttackUltimate") / 2.0f</code>，L557），复刻了 <code>PlayerHealth.healChannelTime</code>。改治疗吟唱时长会让动画倍率错位。</li>
+<li class="num" data-n="12"><strong><code>Player</code> 根节点残留白盒的 MeshFilter + MeshRenderer</strong>（classID 33/23），清理遗漏。</li>
+<li class="num" data-n="13"><strong><code>SummonedWraith</code> / <code>BossVisuals</code> 无条件用 <code>_BaseColor</code>/<code>_Color</code> 染所有 MeshRenderer</strong> —— 接入带贴图的正式模型后会被染成单色。亡魂侧已加 <code>applyTint</code> 开关，<code>BossVisuals</code> 侧没有。</li>
+<li class="num" data-n="14"><strong>没有 <code>.asmdef</code>，没有 <code>.git</code>。</strong> 35 个脚本全在 <code>Assembly-CSharp</code>，任何改动全量重编；<strong>没有版本控制</strong>，改动不可回退、不可对比。</li>
+<h4>G2 · 文档层面的不一致（会误导后续开发）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>#</th>
+<th>问题</th>
+</tr></thead><tbody>
+<tr>
+<td>15</td>
+<td>GDD 版本号三处打架：标题 <code>v1.0（定稿）</code> / §0 最新 <code>v2.1</code> / §15 写 <code>v1.9</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>GDD §4.2 的"大招 80 蓝 / 治疗 45 蓝"是<strong>旧文本</strong>，正确值是 <strong>60 / 30</strong></td>
+</tr>
+<tr>
+<td>17</td>
+<td>BossHP 三处不同：§5.3 <code>1200</code> / §13 <code>3200</code> / §5.5 与场景 <strong><code>3050</code></strong></td>
+</tr>
+<tr>
+<td>18</td>
+<td>GDD §7 写"Cinemachine 第三人称过肩 + 锁定"——<strong>Cinemachine 根本没装</strong></td>
+</tr>
+<tr>
+<td>19</td>
+<td>GDD §10 写"<strong>动画事件驱动判定</strong>"——与工程的"计时器驱动"<strong>设计底线相反</strong></td>
+</tr>
+<tr>
+<td>20</td>
+<td>GDD §10 写"资源参数走 ScriptableObject"——<strong>未实现</strong></td>
+</tr>
+<tr>
+<td>21</td>
+<td>GDD §4.1 的<strong>处决/破防</strong>——<strong>未实现</strong></td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>ThirdPersonCamera.cs</code> 头部注释说"已安装的 Cinemachine"——<strong>错误注释</strong></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h3>H. 为实现"女性二次元双手剑 MMO 风格 ARPG Demo"还缺少哪些系统</h3>
+<h4>H.0 已经站在正确方向上（不要重做）</h4>
+<p>女性二次元角色（PicoChan / 女警 Officer，均 Humanoid）、<strong>双手大剑已挂上</strong>（Greatsword_FrozenNight）、三段连段 + 重击 + 大招 + 蓝/体力双资源、翻滚无敌帧、<strong>Tab 锁定（MMO/ARPG 核心操作）</strong>、完整 HUD、结算、开场叙事、完整 Boss 战。</p>
+<h4>H.1 第一类：不补就没有"双手剑 ARPG"的样子</h4>
+<li class="num" data-n="1"><strong>双手剑专用动画集。</strong> 现在的连段是单手剑动作。需要专为 greatsword 设计的三/四段连击 + 重击竖劈/横扫 + 收招，且<strong>接上现有 <code>PlayerHumanoid.controller</code>（或在它基础上重建，保持状态名不变）</strong>。</li>
+<li class="num" data-n="2"><strong>上下半身分层（Animator Layer）+ Avatar Mask。</strong> 现在只有 <code>Base Layer</code>。双手剑 ARPG 必须有"下半身跑动 / 上半身挥砍"的叠加。<strong>注意</strong>：现有代码用 <code>CrossFadeInFixedTime(name, time, layer: 0, ...)</code>，加层要同步改这里的 layer 参数。</li>
+<li class="num" data-n="3"><strong>Boss 的动画系统（从零）。</strong> <code>Boss_Monarch</code> 无 Animator。需要：正式模型 + Avatar + 招式动画 + <strong>把 <code>BossController</code> 的 <code>windup/active/recover</code> 计时器与动画对齐</strong>（保留"预警 = 前摇"这条底线）。</li>
+<li class="num" data-n="4"><strong>Animation Rigging 包 + 双手 IK。</strong> 大剑正确握持需要左手 IK 抓握、LookAt/头部朝向、武器定位。当前包未安装，<code>gripEuler (-90,0,0)</code> 靠硬调欧拉角对齐。</li>
+<li class="num" data-n="5"><strong>武器/特效/受击的骨骼挂点规范化。</strong> 现在靠 <code>handslot.r</code> / <code>HumanBodyBones.RightHand</code> 名字约定；多角色多武器时需要统一 Socket 定义。</li>
+<h4>H.2 第二类：MMO 风格 ARPG 的核心系统（现在完全没有）</h4>
+<li class="num" data-n="6"><strong>技能/招式数据资产层。</strong> 现在是 <code>BossMove[]</code> 场景数组 + 玩家侧硬编码 <code>SerializeField</code>。需要 <code>SkillDefinition</code> ScriptableObject（前后摇、伤害、判定形状、耗蓝、CD、动画状态名、VFX 引用、可取消窗口），玩家和 Boss 共用。</li>
+<li class="num" data-n="7"><strong>可取消窗口 / 取消规则表。</strong> 现在只有"翻滚可取消一切"，写在 <code>PlayerCombat.Update</code> 的 <code>if</code> 里。ARPG 需要按招式定义"何时可被什么取消"（翻滚取消 / 技能取消 / 后摇取消）—— 这是手感的天花板。</li>
+<li class="num" data-n="8"><strong>受击反馈系统（敌人侧）。</strong> <code>BossController</code> 只有 <code>FlashHit</code> + <code>stagger</code>，没有受击硬直分级、没有霸体/破防条。GDD 提到的<strong>破防→处决</strong>必须补一个 <code>Poise/Break</code> 值系统。</li>
+<li class="num" data-n="9"><strong>伤害数字 / 飘字。</strong> HUD 里没有任何伤害显示。ARPG 的"数字反馈"是必需的。</li>
+<li class="num" data-n="10"><strong>目标切换与多目标锁定。</strong> <code>LockOnController</code> 硬编码 <code>FindObjectOfType&lt;BossController&gt;()</code>，只能锁 Boss 一个。MMO 风格需要目标列表、切换键（Q/E 或滚轮）、目标血条。</li>
+<li class="num" data-n="11"><strong>状态效果框架（Buff/Debuff）。</strong> 现在只有 <code>SpeedMultiplier</code> / <code>DamageTakenMultiplier</code> 两个临时开关，没有通用 Buff 容器、持续时间、层数、图标。</li>
+<li class="num" data-n="12"><strong>多单位/仇恨/生成管理。</strong> 亡魂由 <code>GroundBurst</code> 临时 <code>new GameObject</code> 出来，没有统一敌人生成与清理层。</li>
+<h4>H.3 第三类：工程化与产品化</h4>
+<li class="num" data-n="13"><strong>Layer / 碰撞矩阵规范。</strong> 见 G1-6。加任何新单位的<strong>前置条件</strong>。</li>
+<li class="num" data-n="14"><strong><code>.asmdef</code> 分层</strong>（Game.Core / Game.Combat / Game.Player / Game.Boss / Game.UI…），让"契约层"物理上不可被随便改。</li>
+<li class="num" data-n="15"><strong>版本控制（git）。</strong> 现在没有任何历史，AI Agent 大改代码风险极高。</li>
+<li class="num" data-n="16"><strong>ScriptableObject 化的数值</strong>，把调参从场景里解放出来（也让 AI Agent 可以改数值而不用碰场景 YAML）。</li>
+<li class="num" data-n="17"><strong><code>GameManager</code> 式集中状态管理</strong>（现在 <code>GameFlow</code> 只是三个组件凑在一起）。</li>
+<li class="num" data-n="18"><strong>走/跑速度档</strong>（GDD 写"走 3 / 跑 6"，代码只有单一 <code>moveSpeed: 6</code>）。</li>
+<li class="num" data-n="19"><strong>Cinemachine</strong>（若确定要），或至少<strong>修正 <code>ThirdPersonCamera</code> 的错误注释</strong>。</li>
+<li class="num" data-n="20"><strong>正式 UI 视觉</strong>（现在 HUD 是功能性的 USS 样式）。</li>
+<hr>
+<h3>优先级开发路线</h3>
+<p>排序原则：<strong>先修数据正确性与不可逆的地基，再补"看得见的双手剑"，最后补系统深度。</strong></p>
+<h4>P0 · 立刻做（低成本、高杠杆、不做会连锁误导）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>#</th>
+<th>任务</th>
+<th>为什么是这个优先级</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td><strong>修正 <code>AttackClipProfile</code> 键名</strong>：把场景 profile 的 <code>AttackHeavy</code> 改成 <code>AttackB1</code>（或反之），让 0.45 生效</td>
+<td>一行改动；现在这个调参是死的，等于<strong>一直在用错的手感数据评估动画</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>修 GDD 的四处硬伤</strong>（版本号统一 / 蓝耗 60-30 / BossHP 3050 / 删掉"Cinemachine 已装""动画事件驱动判定""ScriptableObject 已实现""处决已实现"）</td>
+<td>GDD 是设计权威；错文档会持续把后续 AI/人带到错误方向</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>修正 <code>ThirdPersonCamera</code> 的错误注释</strong>（Cinemachine 未安装）</td>
+<td>一行；但它在误导每一个读代码的人</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>建立 git 仓库 + 第一次提交</strong></td>
+<td>之后所有改动都可回滚。<strong>越晚做代价越大</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>加 <code>.asmdef</code>：先只拆出 <code>Game.Combat</code>（DamageInfo/IDamageable）</strong></td>
+<td>让"战斗契约"变成物理上受保护的模块</td>
+</tr>
+</tbody></table></div>
+<h4>P1 · 双手剑 ARPG 的"样子"（本阶段核心目标）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>#</th>
+<th>任务</th>
+<th>依赖 / 注意</th>
+</tr></thead><tbody>
+<tr>
+<td>6</td>
+<td><strong>确定并接入双手剑专用动画集</strong>，重建 <code>PlayerHumanoid.controller</code>：<strong>保持现有状态名不变</strong>（<code>Idle</code> <code>IdleCombat</code> <code>Run</code> <code>StrafeLeft/Right</code> <code>AttackA1-3</code> <code>AttackB1</code> <code>AttackUltimate</code> <code>Block</code> <code>Hit</code> <code>Death</code> <code>RollForward</code>）</td>
+<td>状态名不变 → <code>PlayerModelAnimator</code> 一行都不用改。<strong>这是现有架构最大的红利，务必吃到</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>在 controller 上加 Layer + Avatar Mask</strong>（UpperBody 叠加层），并同步改 <code>CrossFadeInFixedTime</code> 的 layer 参数（<code>PlayerModelAnimator.cs:757</code>）</td>
+<td>让"跑动中挥砍"成立 —— 双手剑 ARPG 的必要条件</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>安装 <code>com.unity.animation.rigging</code> + 做双手 IK</strong>（左手抓握、LookAt）</td>
+<td>替代现在硬调 <code>gripEuler</code> 的做法</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>补 Layer / 碰撞矩阵规范</strong>：新建 <code>Player</code> / <code>Enemy</code> / <code>Environment</code> / <code>Hitbox</code> 层，把 5 处 <code>OverlapSphere</code> 的 LayerMask 显式配好，去掉 <code>CompareTag("Player")</code> 兜底</td>
+<td><strong>加任何第二单位的前置条件</strong>，越晚做返工面越大</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>清理双外观系统</strong>：确定 <code>PlayerModelAnimator</code> 为唯一外观路径，删掉 <code>PlayerVisuals</code>（或降级为纯 Editor 预览工具），移除 <code>EnsureProceduralHidden</code> 的每帧 hack</td>
+<td>顺手清掉 <code>Player</code> 根节点残留的 MeshFilter/MeshRenderer</td>
+</tr>
+</tbody></table></div>
+<h4>P2 · Boss 的动画化（第二大块工作量）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>#</th>
+<th>任务</th>
+<th>注意</th>
+</tr></thead><tbody>
+<tr>
+<td>11</td>
+<td><strong>给 <code>Boss_Monarch</code> 接正式模型 + Animator</strong>，保留 <code>BossVisuals</code> 的 <code>bodyRoot</code> / <code>weaponPivot</code> / <code>crownRoot</code> 三个引用（接口契约）</td>
+<td>换模型的成本被这个契约压到最低</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Boss 招式动画与 <code>windup/active/recover</code> 对齐</strong>：推荐<strong>复用玩家侧已跑通的手法</strong> —— 把 <code>MoveTime()</code> 时长的倒数作为 <code>animator.speed</code>，用"接触帧"配置对齐判定</td>
+<td><strong>必须守住"预警 = 真实前摇"</strong>，否则 M3 的整套可读性设计归零</td>
+</tr>
+<tr>
+<td>13</td>
+<td>复核 <code>BossVisuals.FlashHit</code> / <code>SetChargeGlow</code> 的 <code>_BaseColor</code> 染色在正式模型上的表现，加 <code>tint</code> 类开关</td>
+<td>见 G1-13</td>
+</tr>
+</tbody></table></div>
+<h4>P3 · 系统深度（让 Demo 从"一个 Boss 战"变成"ARPG 框架"）</h4>
+<div class="tw"><table>
+<thead><tr>
+<th>#</th>
+<th>任务</th>
+</tr></thead><tbody>
+<tr>
+<td>14</td>
+<td><strong><code>SkillDefinition</code> ScriptableObject 层</strong>：玩家三招 + 重击 + 大招 + Boss 五招 + 裁决统一成数据驱动；同时解决 G1-7（改数值不用开场景）</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong>取消窗口表</strong>：按招式定义"何时可被翻滚/技能取消"</td>
+</tr>
+<tr>
+<td>16</td>
+<td><strong>破防 / 处决系统</strong>（补 GDD §4.1 的缺口）</td>
+</tr>
+<tr>
+<td>17</td>
+<td><strong>伤害飘字 + 命中数字</strong></td>
+</tr>
+<tr>
+<td>18</td>
+<td><strong>多目标锁定 + 目标列表 + 切换键</strong>（重写 <code>LockOnController</code>，去掉 <code>FindObjectOfType&lt;BossController&gt;</code>）</td>
+</tr>
+<tr>
+<td>19</td>
+<td><strong>Buff/Debuff 通用容器</strong>（替掉 <code>SpeedMultiplier</code> / <code>DamageTakenMultiplier</code> 这类临时开关）</td>
+</tr>
+<tr>
+<td>20</td>
+<td><strong>走/跑速度档</strong> + 可能的冲刺</td>
+</tr>
+<tr>
+<td>21</td>
+<td>统一的敌人生成/清理层（把 <code>GroundBurst.SpawnWraith</code> 的临时 <code>new GameObject</code> 收进管理器）</td>
+</tr>
+</tbody></table></div>
+<h4>P4 · 打磨与产品化</h4>
+<li class="num" data-n="22">正式 UI 视觉（保留元素名契约）</li>
+<li class="num" data-n="23">真音效替换 <code>ProceduralSfx.Get(SfxId)</code></li>
+<li class="num" data-n="24">真 VFX 替换 <code>ProceduralMesh</code> 网格源（<strong>判定逻辑不动</strong>）</li>
+<li class="num" data-n="25">Cinemachine（若确定要，保持 <code>ThirdPersonCamera</code> 的 5 个语义接口）</li>
+<li class="num" data-n="26">IL2CPP + 图标 + 安装器</li>
+<hr>
+<h3>三条最重要的提醒</h3>
+<li class="num" data-n="1"><strong>先确认工程根目录。</strong> 工作目录指向的是被弃用的 2D 版本；活工程是 <strong><code>D:\Unity\be like</code></strong>。继续在错的目录上开发会产出完全无用的东西。</li>
+<li class="num" data-n="2"><strong>"判定走计时器、不走动画事件"是这套架构的承重墙。</strong> 接双手剑动画时务必沿用"按状态名 CrossFade + 用 <code>animator.speed</code> 压缩到计时窗口 + 接触帧对齐"这套已跑通的做法；一旦改成动画事件驱动，<code>PlayerCombat</code> / <code>BossController</code> 的整套时序要重写。</li>
+<li class="num" data-n="3"><strong><code>PlayerHumanoid.controller</code> 的状态名是事实上的接口。</strong> 换动画包时<strong>保持状态名不变</strong>，<code>PlayerModelAnimator</code>、<code>PlayerVfx</code>、<code>PlayerWeapon</code> 全都不用动 —— 这是这个工程最值钱的设计决策，别丢掉。</li>
+<hr>
+<h3>附录 · 关键文件索引</h3>
+<div class="tw"><table>
+<thead><tr>
+<th>用途</th>
+<th>路径</th>
+</tr></thead><tbody>
+<tr>
+<td>设计权威</td>
+<td><code>D:\Unity\be like\Docs\GDD.md</code></td>
+</tr>
+<tr>
+<td>交接记录</td>
+<td><code>D:\Unity\be like\PROJECT_STATE.md</code></td>
+</tr>
+<tr>
+<td>唯一构建场景</td>
+<td><code>D:\Unity\be like\Assets\Scenes\Arena_Whitebox_3D.unity</code></td>
+</tr>
+<tr>
+<td>战斗契约</td>
+<td><code>D:\Unity\be like\Assets\_Game\Scripts\Combat\DamageInfo.cs</code></td>
+</tr>
+<tr>
+<td>玩家移动 / 出招 / 生存</td>
+<td><code>Assets\_Game\Scripts\Player\PlayerController.cs</code> / <code>PlayerCombat.cs</code> / <code>PlayerHealth.cs</code></td>
+</tr>
+<tr>
+<td>角色外观 / 武器</td>
+<td><code>Assets\_Game\Scripts\Player\PlayerModelAnimator.cs</code> / <code>PlayerWeapon.cs</code></td>
+</tr>
+<tr>
+<td>Boss</td>
+<td><code>Assets\_Game\Scripts\Boss\BossController.cs</code>（1606 行）/ <code>BossVisuals.cs</code></td>
+</tr>
+<tr>
+<td>掩体机制</td>
+<td><code>Assets\_Game\Scripts\Boss\CoverService.cs</code> / <code>Pillar.cs</code></td>
+</tr>
+<tr>
+<td>动画控制器</td>
+<td><code>Assets\_Game\Animation\PlayerHumanoid.controller</code></td>
+</tr>
+<tr>
+<td>大剑</td>
+<td><code>Assets\_Game\Models\Weapons\Greatsword_FrozenNight.prefab</code></td>
+</tr>
+<tr>
+<td>HUD 契约</td>
+<td><code>Assets\_Game\UI\Hud.uxml</code> / <code>Assets\_Game\Scripts\UI\HudController.cs</code></td>
+</tr>
+<tr>
+<td>可玩产物</td>
+<td><code>D:\Unity\be like\Build\UndeadMonarch.exe</code></td>
+</tr>
+</tbody></table></div>
+<blockquote><strong>本报告为只读审计的产物，未修改 <code>D:\Unity\be like</code> 中的任何文件。</strong></blockquote>
+</div>
+</body>
+</html>
