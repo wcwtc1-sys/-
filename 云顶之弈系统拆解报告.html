@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《云顶之弈》全维度系统拆解报告 · 文天赐</title>
+<style>
+:root{
+  --ink:#14181f; --ink-2:#2c3440; --muted:#66707e; --faint:#8c95a3;
+  --line:#e3e7ee; --line-2:#eef1f6; --bg:#f5f6f9; --paper:#ffffff;
+  --accent:#0e7482; --accent-soft:#e6f2f4;
+  --gold:#b8860b; --gold-soft:#fbf4e0;
+  --danger:#b03a2e; --danger-soft:#fbeceb;
+  --ok:#2e7d5b; --ok-soft:#e9f5ef;
+  --purple:#5b4b8a; --purple-soft:#efecf7;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Noto Sans SC",system-ui,sans-serif;
+  font-size:15px; line-height:1.85; letter-spacing:.01em;
+}
+.wrap{display:flex; max-width:1440px; margin:0 auto; align-items:flex-start; gap:0;}
+
+/* ---------- 侧栏目录 ---------- */
+.toc{
+  width:268px; flex:0 0 268px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  padding:34px 20px 60px 28px; border-right:1px solid var(--line); background:var(--paper);
+}
+.toc h2{font-size:11px;letter-spacing:.22em;color:var(--faint);margin:0 0 16px;font-weight:600}
+.toc a{
+  display:block; color:var(--muted); text-decoration:none; font-size:13px;
+  padding:4px 8px 4px 10px; border-left:2px solid transparent; line-height:1.5;
+}
+.toc a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft)}
+.toc a.sub{padding-left:22px;font-size:12.5px;color:var(--faint)}
+.toc-group{margin-bottom:6px}
+.toc-group>.toc-h{
+  font-size:12px;font-weight:700;color:var(--ink-2);padding:10px 8px 4px 10px;letter-spacing:.03em;
+  border-left:2px solid transparent;
+}
+
+/* ---------- 主内容 ---------- */
+main{flex:1 1 auto; min-width:0; padding:0 0 120px; background:var(--bg)}
+.page{max-width:980px;margin:0 auto;padding:0 46px}
+
+/* ---------- 封面 ---------- */
+.cover{
+  background:linear-gradient(160deg,#0d2b33 0%,#123845 45%,#0b2028 100%);
+  color:#eaf2f4; padding:74px 46px 62px; margin-bottom:0;
+}
+.cover .inner{max-width:980px;margin:0 auto}
+.cover .kicker{
+  font-size:11.5px;letter-spacing:.34em;color:#6fbfc9;font-weight:600;margin-bottom:26px;
+}
+.cover h1{
+  font-size:44px;line-height:1.22;margin:0 0 14px;font-weight:800;letter-spacing:-.01em;color:#fff;
+}
+.cover h1 em{font-style:normal;color:#f0c65a}
+.cover .sub{font-size:17px;color:#a9c6cc;margin:0 0 34px;line-height:1.7;max-width:760px}
+.cover .meta{
+  display:flex;flex-wrap:wrap;gap:10px 30px;font-size:13px;color:#8fb0b7;
+  border-top:1px solid rgba(255,255,255,.14);padding-top:22px;
+}
+.cover .meta b{color:#dce9eb;font-weight:600}
+.cover .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.cover .tags span{
+  font-size:11.5px;padding:3px 11px;border:1px solid rgba(255,255,255,.22);
+  border-radius:100px;color:#9dc3c9;
+}
+
+/* ---------- 章节 ---------- */
+section{padding-top:64px}
+.sec-head{border-top:2px solid var(--ink);padding-top:20px;margin-bottom:30px}
+.sec-head .num{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--accent);font-weight:700;
+}
+.sec-head h2{
+  font-size:29px;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em;line-height:1.3;
+}
+.sec-head .desc{color:var(--muted);font-size:14px;margin:0}
+h3{
+  font-size:19.5px;margin:44px 0 12px;font-weight:700;color:var(--ink);
+  padding-left:13px;border-left:4px solid var(--accent);line-height:1.45;
+}
+h4{font-size:16px;margin:28px 0 8px;font-weight:700;color:var(--ink-2)}
+h5{font-size:14.5px;margin:20px 0 6px;font-weight:700;color:var(--ink-2)}
+p{margin:11px 0}
+ul,ol{margin:11px 0;padding-left:22px}
+li{margin:5px 0}
+li>ul,li>ol{margin:4px 0}
+strong{font-weight:700;color:var(--ink)}
+code{
+  font-family:var(--mono);font-size:.88em;background:#eef1f5;color:#1d4e57;
+  padding:1.5px 5px;border-radius:3px;
+}
+a{color:var(--accent)}
+
+/* ---------- 表格 ---------- */
+.tw{overflow-x:auto;margin:18px 0}
+table{
+  border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper);
+  border:1px solid var(--line);
+}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line-2);vertical-align:top;line-height:1.65}
+th{
+  background:#f2f4f8;font-weight:700;color:var(--ink-2);font-size:12.5px;
+  letter-spacing:.02em;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbfd}
+td.num,th.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+caption{caption-side:bottom;text-align:left;font-size:12px;color:var(--faint);padding-top:8px}
+
+/* ---------- 卡片 / 标注块 ---------- */
+.box{
+  border:1px solid var(--line);border-left-width:4px;background:var(--paper);
+  padding:16px 20px;margin:20px 0;border-radius:0 5px 5px 0;
+}
+.box .bt{font-size:12px;letter-spacing:.14em;font-weight:700;margin-bottom:7px}
+.box p:first-of-type{margin-top:0}
+.box p:last-child{margin-bottom:0}
+.box.insight{border-left-color:var(--accent);background:var(--accent-soft)}
+.box.insight .bt{color:var(--accent)}
+.box.risk{border-left-color:var(--danger);background:var(--danger-soft)}
+.box.risk .bt{color:var(--danger)}
+.box.tip{border-left-color:var(--ok);background:var(--ok-soft)}
+.box.tip .bt{color:var(--ok)}
+.box.note{border-left-color:var(--gold);background:var(--gold-soft)}
+.box.note .bt{color:var(--gold)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.mini{
+  background:var(--paper);border:1px solid var(--line);padding:15px 17px;border-radius:5px;
+}
+.mini .k{font-size:11.5px;letter-spacing:.1em;color:var(--faint);font-weight:700;margin-bottom:6px}
+.mini .v{font-size:22px;font-weight:800;font-family:var(--mono);color:var(--accent);line-height:1.2}
+.mini .d{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.6}
+
+figure{margin:26px 0;background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:20px 20px 14px}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.6;border-top:1px solid var(--line-2);padding-top:10px}
+figcaption b{color:var(--ink-2)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.legend i{display:inline-block;width:16px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.legend i.dash{height:0;border-top:2px dashed currentColor}
+
+.hr{height:1px;background:var(--line);margin:44px 0}
+.small{font-size:12.8px;color:var(--muted)}
+.tag-inline{
+  display:inline-block;font-size:11px;padding:1px 7px;border-radius:3px;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);margin-right:6px;vertical-align:1px;
+}
+.tag-inline.g{background:var(--gold-soft);color:var(--gold)}
+.tag-inline.r{background:var(--danger-soft);color:var(--danger)}
+.tag-inline.p{background:var(--purple-soft);color:var(--purple)}
+
+.quote{
+  border-left:3px solid var(--ink);padding:4px 0 4px 18px;margin:22px 0;
+  font-size:16px;color:var(--ink-2);line-height:1.75;
+}
+.kv{font-size:13.5px}
+.kv div{display:flex;gap:14px;padding:6px 0;border-bottom:1px dotted var(--line)}
+.kv div span:first-child{flex:0 0 148px;color:var(--muted)}
+
+footer{margin-top:80px;padding-top:26px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.9}
+
+/* ---------- 打印专用目录（屏幕隐藏） ---------- */
+.print-toc{display:none}
+
+/* ---------- 打印 ---------- */
+@page{ size:A4; margin:15mm 13mm 16mm; }
+@page cover{ size:A4; margin:0; }
+@page wide{ size:A4 landscape; margin:14mm 12mm; }
+
+@media print{
+  *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html,body{ background:#fff; }
+  body{ font-size:10pt; line-height:1.78; }
+  .wrap{ display:block; }
+  .toc{ display:none; }
+  main{ padding:0; background:#fff; }
+  .page{ max-width:none; padding:0; }
+
+  /* 封面：整页出血 */
+  .cover{
+    page:cover; margin:0; min-height:297mm; box-sizing:border-box;
+    padding:52mm 26mm 0; break-after:page;
+  }
+  .cover h1{ font-size:31pt; line-height:1.24; }
+  .cover .sub{ font-size:12.5pt; line-height:1.7; }
+  .cover .kicker{ font-size:9pt; margin-bottom:22px; }
+  .cover .meta{ font-size:10pt; gap:8px 24px; }
+  .cover .tags span{ font-size:9pt; }
+
+  /* 打印目录页 */
+  .print-toc{ display:block; }
+  .print-toc .pt-kicker{ font-size:8.5pt; letter-spacing:.32em; color:var(--accent); font-weight:700; }
+  .print-toc h2{
+    font-size:21pt; margin:8px 0 10px; border-top:2.5px solid var(--ink); padding-top:12px; font-weight:800;
+  }
+  .print-toc .pt-lead{ font-size:10pt; color:var(--muted); margin:0 0 20px; }
+  .pt-list{ list-style:none; padding:0; margin:0; column-count:2; column-gap:11mm; }
+  .pt-list li{ break-inside:avoid; padding:8px 0; border-bottom:1px solid var(--line); font-size:10pt; }
+  .pt-list li b{ display:block; font-weight:700; }
+  .pt-list li b i{
+    float:right; font-style:normal; font-weight:600; color:var(--accent);
+    font-size:9pt; letter-spacing:.02em;
+  }
+  .pt-list li span{ display:block; font-size:9pt; color:var(--muted); line-height:1.6; margin-top:2px; }
+
+  /* 章节分页 */
+  section{ padding-top:0; break-before:page; }
+  .sec-head{ break-after:avoid; break-inside:avoid; }
+  .sec-head h2{ font-size:20pt; }
+  .sec-head .desc{ font-size:10pt; }
+  h3{ font-size:13.5pt; margin:24px 0 8px; break-after:avoid; }
+  h4{ font-size:11.5pt; margin:18px 0 6px; break-after:avoid; }
+  h5{ font-size:10.5pt; break-after:avoid; }
+  p,li{ orphans:3; widows:3; }
+
+  /* 元素不可跨页断裂 */
+  table,figure,.box,.mini,figcaption,.print-toc li{ break-inside:avoid; }
+  tr{ break-inside:avoid; }
+  thead{ display:table-header-group; }
+  .grid2,.grid3{ break-inside:avoid; }
+
+  th{ background:#f2f4f8 !important; }
+  th,td{ padding:6px 8px; font-size:8.8pt; line-height:1.6; }
+  table{ font-size:8.8pt; }
+
+  .box{ padding:11px 14px; margin:14px 0; }
+  .box .bt{ font-size:9pt; }
+  .mini{ padding:11px 13px; }
+  /* 图表独占横向页，保证图内文字在打印尺寸下清晰 */
+  figure{
+    page:wide; break-before:page; break-after:page;
+    padding:6px 6px 4px; margin:0; border:none; background:transparent;
+  }
+  figure svg{ max-height:160mm; }
+  figcaption{ font-size:8.5pt; line-height:1.65; }
+  .quote{ font-size:11pt; }
+
+  a{ color:inherit; text-decoration:none; }
+  .tag-inline{ font-size:8pt; }
+  code{ background:#eef1f5 !important; }
+  footer{ break-before:page; }
+}
+@media (max-width:1080px){
+  .toc{display:none}
+  .cover h1{font-size:32px}
+  .page{padding:0 20px}
+  .grid2,.grid3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <h2>目录</h2>
+  <div class="toc-group">
+    <a class="toc-h" href="#s0">00 · 拆解方法与数据口径</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s1">01 · 产品定位与品类坐标</a>
+    <a class="sub" href="#s1-1">1.1 品类演化史</a>
+    <a class="sub" href="#s1-2">1.2 六个关键设计抉择</a>
+    <a class="sub" href="#s1-3">1.3 核心体验定义</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s2">02 · 核心系统拆解</a>
+    <a class="sub" href="#s2-1">2.1 经济系统（心脏）</a>
+    <a class="sub" href="#s2-2">2.2 战斗与结算系统</a>
+    <a class="sub" href="#s2-3">2.3 内容生产系统</a>
+    <a class="sub" href="#s2-4">2.4 元层与段位系统</a>
+    <a class="sub" href="#s2-5">2.5 社交与信息生态</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s3">03 · 玩法循环（四层嵌套）</a>
+    <a class="sub" href="#s3-1">3.1 微循环（15–30 秒）</a>
+    <a class="sub" href="#s3-2">3.2 局内循环（25–40 分钟）</a>
+    <a class="sub" href="#s3-3">3.3 日常循环 / 赛季循环</a>
+    <a class="sub" href="#s3-4">3.4 循环健康度诊断</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s4">04 · 心流拆解（重点）</a>
+    <a class="sub" href="#s4-1">4.1 单局心流曲线</a>
+    <a class="sub" href="#s4-2">4.2 心流锚点与爽点密度</a>
+    <a class="sub" href="#s4-3">4.3 抗挫设计三件套</a>
+    <a class="sub" href="#s4-4">4.4 心流中断点诊断</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s5">05 · 吸引力拆解（八角框架）</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s6">06 · 付费点与商业化</a>
+    <a class="sub" href="#s6-1">6.2 付费点全景表</a>
+    <a class="sub" href="#s6-2">6.3 付费心理与转化漏斗</a>
+    <a class="sub" href="#s6-3">6.4 国服手游的差异化</a>
+    <a class="sub" href="#s6-4">6.5 拉新与回流</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s7">07 · 竞品对标矩阵</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s8">08 · 系统性问题诊断与优化建议</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s9">09 · 可迁移方法论</a>
+  </div>
+  <div class="toc-group">
+    <a class="toc-h" href="#s10">10 · 附录</a>
+  </div>
+</nav>
+
+<main>
+<header class="cover">
+  <div class="inner">
+    <div class="kicker">GAME SYSTEM TEARDOWN / TFT</div>
+    <h1>《云顶之弈》<em>全维度系统拆解报告</em></h1>
+    <p class="sub">从自走棋品类到"可高频重置的战术决策沙盒"——核心系统、四层玩法循环、心流曲线、付费结构与吸引力机制的系统性拆解</p>
+    <div class="meta">
+      <div>作者 <b>文天赐</b></div>
+      <div>版本基准 <b>Set 18 「Enchanted Wilds / 自然之力」（2026.08 上线）</b></div>
+      <div>报告日期 <b>2026-09-20</b></div>
+      <div>视角 <b>系统策划 + 运营/商业化</b></div>
+    </div>
+    <div class="tags">
+      <span>品类：自走棋 / Auto Battler</span>
+      <span>平台：PC（LoL 客户端）+ iOS / Android</span>
+      <span>开发商：Riot Games</span>
+      <span>国服手游：金铲铲之战（腾讯）</span>
+    </div>
+  </div>
+</header>
+
+<nav class="print-toc">
+  <div class="pt-kicker">CONTENTS</div>
+  <h2>报告结构</h2>
+  <p class="pt-lead">全文 10 章，从系统拆解、玩法循环、心流建模、吸引力机制、付费结构到优化提案六个维度展开。版本基准：Set 18「Enchanted Wilds / 自然之力」（2026.08）。</p>
+  <ol class="pt-list">
+    <li><b>00 · 拆解方法与数据口径 <i>P.3</i></b><span>四套分析框架（系统分层 / 循环嵌套 / 心流通道 / 八角驱动）+ 数据免责说明</span></li>
+    <li><b>01 · 产品定位与品类坐标 <i>P.4</i></b><span>品类演化史、六个关键设计抉择、核心体验定义与三引擎闭环</span></li>
+    <li><b>02 · 核心系统拆解 <i>P.7</i></b><span>经济系统（心脏）、战斗与结算、内容生产管线、元层段位、社交信息生态</span></li>
+    <li><b>03 · 玩法循环：四层嵌套 <i>P.16</i></b><span>微循环 30 秒 → 局内 40 分钟 → 日常 3 小时 → 赛季 13 周，含循环健康度诊断</span></li>
+    <li><b>04 · 心流拆解 <i>P.22</i></b><span>单局心流曲线建模、心流锚点密度、抗挫设计三件套、三个心流中断点诊断</span></li>
+    <li><b>05 · 吸引力拆解 <i>P.28</i></b><span>Octalysis 八角驱动逐条对照，识别驱动力结构中的强项与缺口</span></li>
+    <li><b>06 · 付费点与商业化 <i>P.30</i></b><span>付费点全景表、分布矩阵、三级转化漏斗、国服差异化、拉新与回流</span></li>
+    <li><b>07 · 竞品对标矩阵 <i>P.36</i></b><span>与金铲铲之战 / Dota Auto Chess / 酒馆战棋的五维横向对比</span></li>
+    <li><b>08 · 问题诊断与优化提案 <i>P.38</i></b><span>8 项提案，每项含现象、归因、方案、收益、风险与验证指标</span></li>
+    <li><b>09 · 可迁移方法论 <i>P.43</i></b><span>8 条可直接用于自研项目的设计原则 + 立项必答的三个问题</span></li>
+    <li><b>10 · 附录 <i>P.45</i></b><span>阶段结构表、关键经济公式、术语中英对照、参考资料</span></li>
+  </ol>
+</nav>
+
+<div class="page">
+
+<!-- ============================================================ 00 -->
+<section id="s0">
+  <div class="sec-head">
+    <div class="num">SECTION 00</div>
+    <h2>拆解方法与数据口径</h2>
+    <p class="desc">先声明拆解框架与分析边界，避免"看起来专业但其实不可验证"的结论。</p>
+  </div>
+
+  <h3>0.1 本报告使用的四套分析框架</h3>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">FRAMEWORK 01</div>
+      <div style="font-weight:700;font-size:15px">系统分层法</div>
+      <div class="d">把游戏拆成 <b>元层（Meta）</b> / <b>局内层（Match）</b> / <b>操作层（Micro）</b> 三层，逐层回答"这一层解决什么体验问题、由哪些系统承载、层与层之间如何互相喂养"。</div>
+    </div>
+    <div class="mini">
+      <div class="k">FRAMEWORK 02</div>
+      <div style="font-weight:700;font-size:15px">核心循环嵌套法</div>
+      <div class="d">用 <b>微循环 → 局内循环 → 日常循环 → 赛季循环</b> 的四层嵌套，检查每一层的反馈周期与爽点类型是否互补，是否出现"断点"。</div>
+    </div>
+    <div class="mini">
+      <div class="k">FRAMEWORK 03</div>
+      <div style="font-weight:700;font-size:15px">心流通道模型</div>
+      <div class="d">Csikszentmihalyi 的挑战/技能匹配模型，逐回合绘制挑战强度线与玩家掌控感线，找出心流通道区间、无聊区与焦虑区。</div>
+    </div>
+    <div class="mini">
+      <div class="k">FRAMEWORK 04</div>
+      <div style="font-weight:700;font-size:15px">Octalysis 八角驱动</div>
+      <div class="d">用八种核心驱动力逐条对照，回答"它凭什么让人一局接一局"，并检查是否存在驱动力的结构性缺失。</div>
+    </div>
+  </div>
+
+  <div class="box note">
+    <div class="bt">数据口径与免责说明</div>
+    <p>本报告的<b>结构性结论（系统关系、循环设计、心流曲线、付费逻辑）是版本无关的</b>；但具体数值（金币、经验、概率、卡池张数、价格）会随补丁与赛季浮动。文中所有具体数字均为"代表性参考值"，基于截至 Set 18 的公开资料与约 1000 小时个人对局观察整理，<b>实际以当前版本为准</b>。凡属推断而非官方公布的数据，均已标注"推断"。</p>
+  </div>
+</section>
+
+<!-- ============================================================ 01 -->
+<section id="s1">
+  <div class="sec-head">
+    <div class="num">SECTION 01</div>
+    <h2>产品定位与品类坐标</h2>
+    <p class="desc">不理解品类公约数，就无法判断云顶的哪些设计是"品类必然"，哪些是"Riot 的选择"。</p>
+  </div>
+
+  <h3 id="s1-1">1.1 品类演化史：一次由玩家 MOD 发起、被大厂收编的品类革命</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>时间</th><th>事件</th><th>设计层面的意义</th></tr></thead>
+    <tbody>
+      <tr><td class="num">2019.01</td><td>《Dota Auto Chess》作为 Dota 2 自定义地图爆火</td><td>证明"8 人混战 + 自动战斗 + 共享卡池"可以独立成品类</td></tr>
+      <tr><td class="num">2019.02–06</td><td>巨鸟多多《多多自走棋》、V 社《刀塔霸业》、Riot《云顶之弈》密集立项</td><td>品类窗口期只有约 5 个月，属于罕见的"MOD 定义品类"案例</td></tr>
+      <tr><td class="num">2019.06</td><td>云顶之弈随 LoL 客户端全球上线</td><td>用现成 IP + 现成客户端 + 现成账号体系，把获客成本压到接近零</td></tr>
+      <tr><td class="num">2020.03</td><td>云顶之弈手游（TFT Mobile）上线</td><td>同一套规则跨端，为后续"金铲铲之战"提供了本地化基础</td></tr>
+      <tr><td class="num">2021.08</td><td>国服手游《金铲铲之战》独立上线</td><td>在中国市场做成"独立 App + 独立商业化"，与端游数据体系解耦</td></tr>
+      <tr><td class="num">2022 起</td><td>赛季制（Set）节奏固化：约 13 周一个 Set</td><td>品类从"一个游戏"变成"一个不断换皮的规则容器"</td></tr>
+      <tr><td class="num">2026.08</td><td>Set 18「Enchanted Wilds / 自然之力」——首个迁移至 <b>Unreal Engine</b> 的赛季</td><td>元层技术重构，指向更长的内容生命周期与更强的表现力上限</td></tr>
+    </tbody>
+    <caption>资料来源：Riot 官方公告、TFT 官方赛季总览页、公开媒体报道整理。</caption>
+  </table>
+  </div>
+
+  <h3 id="s1-2">1.2 六个关键设计抉择：云顶的"性格"在哪里形成</h3>
+  <p>同品类产品的公约数只有四条：<b>8 人同局、自动战斗、共享资源池、经济复利</b>。真正拉开差距的是以下六个分叉点——这些才是拆解的价值所在。</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>抉择</th><th>云顶的选择</th><th>竞品的常见选择</th><th>带来的结果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>局外成长</b></td>
+        <td>几乎为零：无等级、无卡牌收集养成、无数值加成</td>
+        <td>多数手游自走棋保留"局外补强"（棋子养成、装备强化）</td>
+        <td>牺牲短期付费深度，换取竞技公信力与低回流门槛</td>
+      </tr>
+      <tr>
+        <td><b>内容更新方式</b></td>
+        <td>每约 13 周整套换血（Set 制），棋子/羁绊全换</td>
+        <td>增量更新、旧内容长期留存</td>
+        <td>用"重置"代替"数值膨胀"，代价是学习成本周期性归零</td>
+      </tr>
+      <tr>
+        <td><b>随机性的位置</b></td>
+        <td>集中在"获取资源"环节（商店、强化符文、选秀），<b>结算环节随机性被严格压制</b></td>
+        <td>部分竞品保留命中率、闪避、暴击等结算随机</td>
+        <td>强化"可归因性"——输了能说清是哪一步错了</td>
+      </tr>
+      <tr>
+        <td><b>胜负结构</b></td>
+        <td>8 人名次梯度：<b>前 4 名即算胜</b>（加分解）</td>
+        <td>部分竞品仅吃鸡才算赢，其余为败</td>
+        <td>单局 87.5% 的玩家都能获得"部分胜利"，抗挫能力极强</td>
+      </tr>
+      <tr>
+        <td><b>变现位置</b></td>
+        <td>100% 表达性付费（小小英雄、棋盘、特效、宝典）</td>
+        <td>强度付费 + 表达性付费混合</td>
+        <td>付费不引发公平性争议，口碑资产可长期复用</td>
+      </tr>
+      <tr>
+        <td><b>竞技生态</b></td>
+        <td>有完整的全球赛事体系（TFT 全球总决赛等）</td>
+        <td>多数竞品无成体系赛事</td>
+        <td>为"精进"提供了目标容器，延长高段玩家的生命周期</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s1-3">1.3 核心体验定义：云顶到底在卖什么</h3>
+  <div class="box insight">
+    <div class="bt">核心洞察</div>
+    <p>云顶之弈是一款<b>"把 MOBA 的操作技巧替换成回合制资源决策，把 40 分钟的手速博弈压缩成 25 分钟的信息博弈"</b>的产品。它真正售卖的不是战斗演出，而是：</p>
+    <div class="quote">在有限信息与有限资源的双重约束下，持续做出可被事后验证的决策，并为此获得即时、可归因的反馈。</div>
+    <p>这个定义能一次性解释三个现象：</p>
+    <ul>
+      <li><b>为什么没有局外成长也能留存</b>——反馈来自"我这局决策质量如何"，而不是"我的数值涨了多少"。</li>
+      <li><b>为什么心流能持续 25 分钟</b>——决策密度极高（每回合至少 3–5 个有意义选择），神经唤醒水平不下滑。</li>
+      <li><b>为什么付费只能卖表达</b>——如果决策质量可以被金钱购买，上面这条定义立刻崩塌。</li>
+    </ul>
+  </div>
+
+  <h4>三系统的"决策—反馈"闭环</h4>
+  <p>云顶所有系统都可以归约到三个引擎，它们共同支撑上面那句话：</p>
+  <div class="grid3">
+    <div class="mini">
+      <div class="k">ENGINE 01</div>
+      <div style="font-weight:700">经济系统 = 资源约束</div>
+      <div class="d">决定"你能做多少事"。利息机制制造了"现在花 or 以后花"的跨期决策，是全部策略深度的来源。</div>
+    </div>
+    <div class="mini">
+      <div class="k">ENGINE 02</div>
+      <div style="font-weight:700">内容随机 = 信息约束</div>
+      <div class="d">决定"你能做什么事"。商店与强化符文制造"计划被迫修正"，把静态攻略变成动态决策。</div>
+    </div>
+    <div class="mini">
+      <div class="k">ENGINE 03</div>
+      <div style="font-weight:700">战斗结算 = 反馈通道</div>
+      <div class="d">决定"你做得对不对"。低随机性的结算把结果近乎确定性地归因回决策，闭环成立。</div>
+    </div>
+  </div>
+  <p class="small">这三者是<b>互相牵制</b>的：经济太宽松则无决策，随机太强则无归因，结算太随机则前两者全部失效。云顶的每一次平衡补丁，本质上都是在调这三个引擎的耦合强度。</p>
+</section>
+
+<!-- ============================================================ 02 -->
+<section id="s2">
+  <div class="sec-head">
+    <div class="num">SECTION 02</div>
+    <h2>核心系统拆解</h2>
+    <p class="desc">逐系统给出：设计目的 → 机制构成 → 关键数值 → 产生的博弈张力 → 结构性风险。</p>
+  </div>
+
+  <h3 id="s2-1">2.1 经济系统——全游戏的心脏</h3>
+  <p>如果只能拆一个系统，那一定是经济。云顶的经济系统是整个自走棋品类最精妙的设计，因为它在<b>极少的规则数量</b>下生产出了<b>极高密度的决策</b>。</p>
+
+  <h4>2.1.1 收入结构：四条水龙头</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>来源</th><th>规则（参考值）</th><th>设计目的</th><th>可操纵性</th></tr></thead>
+    <tbody>
+      <tr><td><b>回合底薪</b></td><td class="num">每回合 +5 金</td><td>保证最低行动能力，避免"卡死"体验</td><td>不可控（稳定底盘）</td></tr>
+      <tr><td><b>利息</b></td><td class="num">每持有 10 金 +1，上限 +5</td><td>制造"存钱 vs 花钱"的跨期决策，是本系统全部深度的来源</td><td>完全可控（核心决策）</td></tr>
+      <tr><td><b>连胜 / 连败补贴</b></td><td class="num">按连续回合阶梯递增，约 +1 → +3</td><td>让"连胜"和"连败"都成为可经营的经济状态</td><td>半可控（需要牺牲血量或战力）</td></tr>
+      <tr><td><b>战斗胜利</b></td><td class="num">+1 金</td><td>即时正反馈，小额但高频</td><td>结果决定</td></tr>
+      <tr><td><b>特殊来源</b></td><td class="num">羁绊（如"海盗/财富"类）、装备、强化符文、选秀</td><td>为经济本身提供"策略分叉"，让经济也变成一种可构筑的套路</td><td>可构筑（高级策略）</td></tr>
+    </tbody>
+    <caption>参考值以主流版本为准，具体数值随赛季/补丁浮动。</caption>
+  </table>
+  </div>
+
+  <h4>2.1.2 支出结构：三种"货币化"路径</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>支出</th><th>成本（参考值）</th><th>换取</th><th>决策含义</th></tr></thead>
+    <tbody>
+      <tr><td><b>刷新商店（Roll）</b></td><td class="num">2 金 / 次</td><td>一次新的 5 张候选棋子</td><td>"现在就要"——即时满足，但摊薄利息</td></tr>
+      <tr><td><b>购买经验（XP）</b></td><td class="num">4 金 / 4 XP</td><td>提升等级 → 提高高费卡出现率 + 增加上阵位</td><td>"投资未来"——延迟满足，但失去当下战力</td></tr>
+      <tr><td><b>购买棋子</b></td><td class="num">1/2/3/4/5 金（按费用）</td><td>直接战力</td><td>可回售（通常按原价或折价），降低试错成本</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box insight">
+    <div class="bt">设计洞察 · 为什么利息上限是 5 而不是 10</div>
+    <p>利息上限 5，对应"50 金"这个心理阈值。这个数字同时完成了三件事：</p>
+    <ul>
+      <li><b>制造饱和点</b>：50 金之后继续存钱不再有边际收益，强迫玩家在固定时间点"必须把钱花出去"，游戏节奏因此有明确的时间表。如果没有上限，最优解会退化成"无限存钱"，整局游戏会崩掉。</li>
+      <li><b>控制经济领先的雪球半径</b>：上限意味着经济领先最多只能转化为"每回合多 5 金"，而不是指数级放大，保证了翻盘空间。</li>
+      <li><b>给玩家一个清晰的中间目标</b>："存到 50"是一个新手也能理解、高手也能优化的目标，是极佳的教学锚点。</li>
+    </ul>
+    <p>把利息从"线性复利"改成"封顶复利"，是防雪球与保深度之间的一次精确平衡。</p>
+  </div>
+
+  <h4>2.1.3 三条经典经济流派及其期望值</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>流派</th><th>操作特征</th><th>强度曲线</th><th>收益来源</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>连胜流<br>(Win-streak)</b></td>
+        <td>早期激进买卡、拉等级，用最强阵容滚雪球</td>
+        <td>前中期强 → 后期平</td>
+        <td>连胜补贴 + 血量健康带来的选秀优先权</td>
+        <td>一旦连胜断掉，经济与血量双重受损，容易崩盘</td>
+      </tr>
+      <tr>
+        <td><b>存钱流<br>(Econ / 50-gold)</b></td>
+        <td>2 阶段几乎不 D 卡，靠利息滚到 50 金后中期爆发</td>
+        <td>前期弱 → 中后期强</td>
+        <td>利息最大化 + 后期一次高预算 D 卡成型</td>
+        <td>血量消耗大，遇到强势进攻阵容可能被直接淘汰</td>
+      </tr>
+      <tr>
+        <td><b>连败流<br>(Lose-streak / 空城)</b></td>
+        <td>刻意上弱阵容，保住连败补贴与选秀优先级</td>
+        <td>极弱前期 → 装备/经济双优后期</td>
+        <td>连败补贴 + 共享选秀先手拿装备</td>
+        <td>补偿曲线一旦被削弱（历史上多次调整过连败收益），该流派直接失效</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small"><b>值得记录的运营动作：</b>连败收益在多个版本被下调（社区补丁预览中曾出现"3 费概率下调、连败收益变低"的调整方向）。这说明官方对连败流的态度是"允许存在但不允许成为最优解"——因为连败流会让前 10 分钟的对局观赏性大幅下降。</p>
+
+  <h4>2.1.4 经济系统的隐藏性质：它是"隐形的匹配机制"</h4>
+  <p>经济系统还承担了一个很少被提及的功能：<b>它把玩家的技术水平差异转化成了可见的时间差</b>。高手在第 2 阶段就能预判自己第 4 阶段的经济状态，而新手只能被动反应。这带来两个后果：</p>
+  <ul>
+    <li><b>优点</b>：技术水平有极长的成长曲线，1000 小时仍有精进空间，是高段位玩家留存的核心支柱。</li>
+    <li><b>缺点</b>：新手的挫败感难以归因——"我不是被打死的，我是被慢慢算死的"。这是新手期最大的劝退来源。</li>
+  </ul>
+
+  <div class="box risk">
+    <div class="bt">结构性风险</div>
+    <ul>
+      <li><b>开局赌徒化</b>：当强化符文/装备差距过大时，玩家会形成"这局开局就没了"的判断，导致前 5 分钟即放弃。</li>
+      <li><b>垃圾时间</b>：血量健康但阵容已死的中期局面（详见 4.4），是体验上最需要治理的问题。</li>
+      <li><b>连败流的观赏性负外部性</b>：为了保住连败而主动变弱，从直播/观战角度是负资产。</li>
+    </ul>
+  </div>
+
+  <h3 id="s2-2">2.2 战斗与结算系统</h3>
+
+  <h4>2.2.1 自动战斗的本质：把操作前置</h4>
+  <p>自动战斗（Auto-battler）常被误解为"没有操作的战斗"。更准确的说法是：<b>它把操作从战斗中剥离，全部前置到战斗前的阵容规划阶段</b>。</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>维度</th><th>MOBA（LoL 本体）</th><th>自走棋（云顶）</th></tr></thead>
+    <tbody>
+      <tr><td>操作窗口</td><td>全程实时，秒级</td><td>回合制，每回合约 30 秒</td></tr>
+      <tr><td>核心能力</td><td>反应、手眼协调、走位精度</td><td>资源规划、概率判断、信息处理</td></tr>
+      <tr><td>失误成本</td><td>单次失误可能立刻致命</td><td>单次失误通常可被后续回合部分补偿</td></tr>
+      <tr><td>学习曲线</td><td>机械性技巧需要肌肉记忆</td><td>知识型成长，可完全靠阅读与复盘提升</td></tr>
+      <tr><td>年龄/体力门槛</td><td>有反应速度天花板</td><td>无明显生理天花板</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计洞察</div>
+    <p>"无生理天花板"是一个被严重低估的商业优势：它让云顶的用户年龄结构比 MOBA 更宽，且高段位玩家的可留存年限更长——30 岁以上的玩家在 MOBA 中会被反应速度淘汰，但在云顶中不会。</p>
+  </div>
+
+  <h4>2.2.2 血量与伤害结算："血量即失败次数"</h4>
+  <p>云顶给每个玩家 100 点血，而不是"三条命"。这是整个抗挫结构的基石。</p>
+  <ul>
+    <li><b>100 点血 = 失败的缓冲池。</b>单次战斗失败通常造成 5–20 点伤害，意味着玩家平均可以承受 <b>6–15 次失败</b>才被淘汰。这带来极长且平滑的"失败容忍期"。</li>
+    <li><b>伤害公式的设计意图：</b>伤害 ≈ 基础值 + 敌方存活单位数 × 星级系数。也就是说，<b>输得越惨，掉血越多</b>。这制造了一个非常健康的效果——弱势玩家会自然加速出局，缩短对局尾巴，避免"8 个人都赖着不走"的冗长局面。</li>
+    <li><b>血量同时是排序依据。</b>排名由淘汰顺序决定，因此"血量"既是资源，也是分数。这个双重身份让"保血"成为一个独立的、值得优化的策略维度。</li>
+  </ul>
+
+  <h4>2.2.3 随机性的"隔离手术"：为什么结算必须尽量确定</h4>
+  <p>这是云顶最重要、也最容易被忽略的设计原则：<b>随机性被刻意隔离在"资源获取"环节，而"战斗结算"环节的随机性被压到最低。</b></p>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">随机性集中在（可改变）</div>
+      <div class="d">商店刷出什么棋子、强化符文给什么、选秀有什么装备、野怪掉什么。这些随机都能被玩家用<b>经济规划、阵容宽度、灵活转阵</b>去应对。</div>
+    </div>
+    <div class="mini">
+      <div class="k">随机性被压制在（不可改变）</div>
+      <div class="d">普通攻击默认命中、暴击与闪避被大幅限制、技能结算基本确定。目的是让"战斗结果"几乎完全由"战前配置"决定。</div>
+    </div>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计原则提炼</div>
+    <p><b>随机性放在玩家能改变的地方，就是玩法；放在玩家不能改变的地方，就是挫败。</b></p>
+    <p>云顶严格遵守了这条原则。对比一下：如果技能有 20% 概率打空，那么"我输了"的归因就从"我站位错了"变成"我运气差"，游戏的核心循环（决策→反馈→优化）会当场断裂。</p>
+  </div>
+
+  <h4>2.2.4 站位系统：对称棋盘里的信息不对称</h4>
+  <p>棋盘通常是 4×7 的双半场镜像结构。它的设计精妙之处在于：</p>
+  <ul>
+    <li><b>前 15 秒可见、后 15 秒隐藏</b>的对手信息，制造了"猜站位 / 反猜站位"的博弈层。这是高手与普通玩家差距最大的地方之一。</li>
+    <li><b>站位不消耗资源，只消耗认知。</b>对同一套阵容，不同的站位可以把胜率从 40% 提到 60%。这意味着"操作层"（Micro）在云顶不是消失了，而是从"手速"变成了"空间推理"。</li>
+    <li><b>后期 1v1 阶段</b>，双方可以互相观察阵型并针对调整，心流峰值就出现在这里（见 4.1）。</li>
+  </ul>
+
+  <h4>2.2.5 共享选秀（Carousel）：写进规则的"弱者补偿"</h4>
+  <p>每阶段中段的共享选秀是所有玩家同时从一个环上挑选棋子/装备，<b>血量最低者优先选择</b>。这是一个教科书级的橡皮筋（rubber-banding）设计：</p>
+  <ul>
+    <li>把"补偿"做成了<b>可见、可竞争、有仪式感</b>的动作，而不是暗改概率。玩家感受到的是"我抢到了好装备"，而不是"系统送我的"。</li>
+    <li>同时它也是<b>反雪球</b>与<b>内容分发</b>的合并装置：它同时解决了资源分配公平性与关键装备（如"拳套""铲子"）的稀缺分发问题。</li>
+    <li>副作用：高血量玩家拥有"先看到别人选什么"的信息优势，因此选秀也自带一个信息博弈层。</li>
+  </ul>
+
+  <h3 id="s2-3">2.3 内容生产系统：棋子 / 羁绊 / 装备 / 强化符文</h3>
+  <p>这一层回答的问题是：<b>"一个内容有限的游戏，如何生产出近乎无限的关卡？"</b></p>
+
+  <h4>2.3.1 羁绊系统：拼图式的收集结构</h4>
+  <p>羁绊（Trait）的设计结构非常简单：同一羁绊的棋子达到 n / 2n / 3n 数量时激活递增效果。但它的策略价值来自三个附加约束：</p>
+  <ul>
+    <li><b>上阵位是硬约束</b>（通常 6–10 个），意味着你不可能同时激活所有羁绊，必须做取舍。</li>
+    <li><b>棋子跨羁绊</b>，一个棋子往往同时属于 2–3 个羁绊，这使得"拼图"存在多重解。</li>
+    <li><b>断点跳跃性</b>：n 到 2n 之间是悬崖式而非线性提升，这制造了强烈的"再来一张就成型"的目标拉力。</li>
+  </ul>
+  <div class="box insight">
+    <div class="bt">设计洞察 · 断点就是"目标钩子"</div>
+    <p>如果羁绊效果是线性的（每多一个棋子 +3% 属性），玩家会自然地"尽量多带"。而阶梯式断点让玩家产生明确的目标感："我现在 5 个，再来 1 个就是 6 羁绊"——这是驱动玩家下一局再来一次的核心引力之一。</p>
+  </div>
+
+  <h4>2.3.2 强化符文（Augments）：云顶最重要的系统级创新</h4>
+  <p>强化符文在 Set 6 引入，是云顶区别于所有同品类竞品的核心护城河。它的本质是：<b>把"每局策略分叉"从装备层面提升到了"规则层面"。</b></p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>层面</th><th>没有强化符文时</th><th>有强化符文时</th></tr></thead>
+    <tbody>
+      <tr><td>策略维度</td><td>阵容选择（我玩什么羁绊）</td><td>阵容选择 <b>×</b> 规则选择（这局的规则是什么）</td></tr>
+      <tr><td>每局的差异度</td><td>低——主流阵容高度可复制</td><td>高——同一个阵容配不同符文是不同玩法</td></tr>
+      <tr><td>对"抄作业"的抵抗力</td><td>弱——照着攻略抄即可</td><td>强——攻略只能给策略框架，具体决策必须现场做</td></tr>
+      <tr><td>内容复用率</td><td>一套棋子只能玩出一种体验</td><td>同一套棋子可以被符文重组出多种体验</td></tr>
+      <tr><td>玩家的"自我表达"</td><td>受限</td><td>强——"我这局拿了这个符文所以这么玩"成为身份标识</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">补充观察：从社区反馈看，强化符文的"随机性"一直是平衡争议的焦点，官方也持续在"随机池 vs 保证选项"之间调优（例如降低纯 RNG 槽位、提供更多保底选项的方向）。这说明符文的随机性强度是这条护城河上最需要精调的阀门——随机太弱则失去每局差异，太强则破坏可归因性。</p>
+
+  <h4>2.3.3 装备系统：为什么是 9 个基础件</h4>
+  <p>通常 9 个基础装备，两两合成产生约 45 种成装。这个数字是精心选择的：</p>
+  <ul>
+    <li><b>9 个基础件</b>意味着玩家可以靠记忆管理（人的工作记忆上限约 7±2），学习成本可接受。</li>
+    <li><b>合成配方不公开显示</b>是一个刻意的"知识门槛"——它制造了可学习、可炫耀的隐性知识（社区俗称"背合成表"）。这属于"知识型爽感"的来源之一。</li>
+    <li><b>装备不可逆（大多数情况）</b>，让"这件装备给谁"成为一次不可撤销的高权重决策，抬高了单次决策的情感重量。</li>
+  </ul>
+
+  <h4>2.3.4 卡池与商店概率：博弈的黑箱</h4>
+  <p>商店概率表是云顶数值设计的核心工具。以主流版本为代表的参考值如下：</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">等级</th><th class="num">1 费</th><th class="num">2 费</th><th class="num">3 费</th><th class="num">4 费</th><th class="num">5 费</th><th>设计含义</th></tr></thead>
+    <tbody>
+      <tr><td class="num">3</td><td class="num">75%</td><td class="num">25%</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td>纯低费阶段</td></tr>
+      <tr><td class="num">5</td><td class="num">45%</td><td class="num">33%</td><td class="num">20%</td><td class="num">2%</td><td class="num">—</td><td>2 费主力区</td></tr>
+      <tr><td class="num">6</td><td class="num">30%</td><td class="num">40%</td><td class="num">25%</td><td class="num">5%</td><td class="num">—</td><td>2/3 费过渡</td></tr>
+      <tr><td class="num">7</td><td class="num">19%</td><td class="num">30%</td><td class="num">35%</td><td class="num">15%</td><td class="num">1%</td><td>3 费最优点</td></tr>
+      <tr><td class="num">8</td><td class="num">18%</td><td class="num">25%</td><td class="num">32%</td><td class="num">22%</td><td class="num">3%</td><td><b>4 费性价比拐点</b></td></tr>
+      <tr><td class="num">9</td><td class="num">10%</td><td class="num">20%</td><td class="num">25%</td><td class="num">35%</td><td class="num">10%</td><td>高费阵容成型区</td></tr>
+      <tr><td class="num">10</td><td class="num">5%</td><td class="num">10%</td><td class="num">20%</td><td class="num">40%</td><td class="num">25%</td><td>终局强度区</td></tr>
+    </tbody>
+    <caption>代表性参考值，用于说明结构逻辑；具体数值随赛季与补丁浮动，实际以当前版本为准。</caption>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">从这张表能读出的三条设计逻辑</div>
+    <ul>
+      <li><b>"等级"是一个可购买的运气参数。</b>买经验 = 提升抽到高费卡的概率。这是把"运气"变成"可投资标的"的经典手法——玩家花的钱不是买战力，是买概率分布。</li>
+      <li><b>7 级是 3 费最优，8 级是 4 费拐点，9 级才是终局。</b>升级成本是递增的（越往后越贵），因此"要不要升级"永远是全局性决策：升 9 意味着放弃约 20–30 次刷新。这个取舍贯穿整局，构成了最宏大的一个决策。</li>
+      <li><b>5 费在 8 级只有 3%。</b>三星 5 费之所以是"神话级成就"，是被概率表精确控制的稀缺性——它必须足够罕见才能成为社交货币。</li>
+    </ul>
+  </div>
+
+  <h4>2.3.5 卡池张数与"抢卡"博弈</h4>
+  <p>每种棋子在共享卡池中有固定张数（费用越高张数越少，例如 1 费约 29 张、5 费约 10 张量级）。这带来云顶最重要的<b>人与人的直接博弈</b>：</p>
+  <ul>
+    <li><b>零和资源</b>：8 名玩家从同一个池子抽卡，别人拿走一张，你的概率就下降一分。</li>
+    <li><b>三星的数学边界</b>：升 3 星需要 9 张同卡。以 5 费卡约 10 张的池子计算，<b>理论上全桌最多只能有 1 家三星 5 费</b>。这让"追三星 5 费"成为一个必须侦查对手、判断"能不能捡漏"的高阶决策。</li>
+    <li><b>侦查（Scouting）因此成为必需技能</b>：看别人拿了几张、几家在抢同一个羁绊，直接决定你"该不该转阵"。这是云顶信息博弈层的主体。</li>
+  </ul>
+
+  <h4>2.3.6 赛季制内容管线：把"版本更新"变成"产品发布"</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>节奏</th><th>周期</th><th>动作</th><th>运营目的</th></tr></thead>
+    <tbody>
+      <tr><td><b>Set 上线</b></td><td class="num">约 13 周</td><td>整套棋子/羁绊/机制替换，新主题、新皮肤、新宝典</td><td>制造"新品发布"级的事件感，拉动回流</td></tr>
+      <tr><td><b>大补丁</b></td><td class="num">约 3–4 周</td><td>平衡性调整、弱点修复、"B 版"内容</td><td>打断 Meta 固化的时间窗</td></tr>
+      <tr><td><b>小补丁</b></td><td class="num">约 2 周</td><td>数值微调</td><td>维持社区讨论热度，提供"这周环境变了"的复访理由</td></tr>
+      <tr><td><b>Set 中后期</b></td><td class="num">第 7–12 周</td><td>限时模式、怀旧模式、活动联动</td><td>对冲 Meta 疲劳与玩家流失（关键，见 3.4）</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计洞察 · "用重置对抗膨胀"</div>
+    <p>卡牌/自走棋品类有一个根本矛盾：<b>卡池固定则套路必然固化</b>。传统解法是"不断加新卡+数值膨胀"，结果是新玩家越来越难入场、老玩家的积累变成壁障。</p>
+    <p>云顶的解法是<b>定期整体重置</b>：每约 13 周，所有玩家（无论大师还是青铜）回到同一个起跑线。代价是学习成本周期性归零，收益是——<b>它有无限次"重新拉新"的机会</b>，且永远不存在"数值壁障"。</p>
+    <p>这是一个用"运营节奏"替代"数值设计"来续命的长期主义解法，我认为是云顶得以在 7 年后仍保持活力的第一原因。</p>
+  </div>
+
+  <h3 id="s2-4">2.4 元层与段位系统</h3>
+
+  <h4>2.4.1 双轨段位：隐藏 MMR + 可见段位</h4>
+  <p>云顶采用的是"隐藏匹配分（MMR）+ 可见段位"的双轨制。它的价值在于分离了两个目标：</p>
+  <ul>
+    <li><b>MMR</b> 负责"匹配公平"——让对局尽可能势均力敌。</li>
+    <li><b>可见段位</b> 负责"情绪反馈"——给玩家一个稳定、不会因单局波动而剧烈震荡的身份标识。</li>
+  </ul>
+  <p>好处是避免了"掉段"带来的剧烈挫败（可见段位通常设有降级保护），同时保证匹配质量。</p>
+
+  <h4>2.4.2 顶部的稀缺性设计：大师 / 宗师 / 王者</h4>
+  <p>大师以上通常采用<b>名额制排名</b>（如宗师、王者只保留全区前 N 名）。这是一个极高效的长线目标装置：</p>
+  <ul>
+    <li><b>稀缺性由人数封顶，不由分数封顶。</b>因此顶端永远有竞争压力，不会出现"分数通胀导致王者遍地"的情况。</li>
+    <li><b>它是唯一的社交资本容器。</b>因为云顶没有数值养成，"王者"这个头衔几乎是全部的身份表达出口，玩家围绕它的投入强度会非常高。</li>
+  </ul>
+
+  <h4>2.4.3 多元玩法矩阵：覆盖不同的时长与社交需求</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>模式</th><th>时长</th><th>核心需求</th><th>设计作用</th></tr></thead>
+    <tbody>
+      <tr><td><b>经典排位</b></td><td class="num">25–40 分钟</td><td>竞技、精进</td><td>核心玩法，承载全部深度</td></tr>
+      <tr><td><b>狂暴模式 / Hyper Roll</b></td><td class="num">10–15 分钟</td><td>碎片时间、快速体验高费阵容</td><td>把"经济运营"压缩掉，让玩家直达爽点；是极佳的"时间预算不足者"留存方案</td></tr>
+      <tr><td><b>双人模式 / Double Up</b></td><td class="num">25–35 分钟</td><td>陪伴、社交</td><td>2v2v2v2，可传递装备与棋子，显著提升女性玩家与低龄玩家占比</td></tr>
+      <tr><td><b>PvE / 试炼类模式</b></td><td class="num">15–30 分钟</td><td>无压力练习、剧情体验</td><td>承接"排位焦虑"的玩家，提供低压场景</td></tr>
+      <tr><td><b>宝库 / 抽奖类活动</b></td><td class="num">—</td><td>收藏、随机奖励</td><td>商业化承载体（详见 6.1）</td></tr>
+    </tbody>
+    <caption>模式名称与形态随版本有增删，此处按功能分类。</caption>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计洞察 · 玩法矩阵的本质是"时间预算分层"</div>
+    <p>云顶的模式矩阵不是在做"多种玩法"，而是在做<b>同一玩法的不同时间预算版本</b>。狂暴模式本质是"去掉前 12 分钟的经济运营，直接给你后 12 分钟的战斗爽点"。</p>
+    <p>这是一个值得抄的运营手法：当一款游戏的核心体验有"入场成本"（本例中是 10 分钟的经济铺垫期）时，<b>提供一个削减入场成本的平行模式，是降低流失率性价比最高的做法</b>，远优于做新手引导。</p>
+  </div>
+
+  <h3 id="s2-5">2.5 社交与信息生态（常被忽视的"外部系统"）</h3>
+  <p>云顶有一个其他自走棋不具备的资产：<b>一个成熟的外部信息生态</b>。第三方数据站（阵容胜率、装备胜率、海克斯胜率统计）、直播、社区攻略、阵容代码分享，共同构成了游戏的"外挂大脑"。</p>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">正面价值</div>
+      <div class="d">
+        <b>1. 降低学习门槛</b>——新手可以直接抄阵容代码，快速获得正反馈。<br>
+        <b>2. 延长内容寿命</b>——玩家在游戏外仍在"玩"这个游戏（看数据、算阵容）。<br>
+        <b>3. 免费的市场调研</b>——官方能实时看到全球的 Meta 分布，作为平衡依据。
+      </div>
+    </div>
+    <div class="mini">
+      <div class="k">负面价值</div>
+      <div class="d">
+        <b>1. 加速 Meta 固化</b>——数据站把"发现最优解"的过程从数天压缩到数小时，赛季第 2 周即可能固化。<br>
+        <b>2. 削弱"自我探索"的乐趣</b>——玩家的成就感从"我发现了"变成"我跟上了"。<br>
+        <b>3. 形成胜率压力</b>——"不按 T0 阵容玩就是送"，挤压了娱乐性构筑的空间。
+      </div>
+    </div>
+  </div>
+  <p>官方对此的策略是<b>不封杀、而是用随机性对冲</b>：强化符文、选秀、卡池这些随机装置让"抄阵容"只能抄到一个骨架，具体决策仍必须现场做。这是一个很聪明的处理——<b>不去对抗玩家的工具化行为，而是让工具化行为的收益有天花板</b>。</p>
+
+  <div class="hr"></div>
+  <p class="small">↓ 下一章：四层玩法循环与它们的反馈周期</p>
+</section>
+
+<!-- ============================================================ 03 -->
+<section id="s3">
+  <div class="sec-head">
+    <div class="num">SECTION 03</div>
+    <h2>玩法循环：四层嵌套结构</h2>
+    <p class="desc">循环设计的判断标准只有一个：玩家在任意时刻，是否都处于"离下一个反馈不超过 X 秒"的状态。</p>
+  </div>
+
+  <p>云顶的循环结构是本文认为它最值得学习的地方。它用四层嵌套，把反馈周期做了<b>从 20 秒到 13 周的对数级铺开</b>，因此玩家在任何一种时间尺度上都能找到"继续玩下去"的理由。</p>
+
+  <h3 id="s3-1">3.1 微循环（15–30 秒）：一回合就是一次完整决策</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">MICRO LOOP</div>
+    <p style="font-family:var(--mono);font-size:13px;line-height:2;margin:0">
+      观察局势 → 判断需求 → <b>D 卡（刷新）</b> → 评估 5 张候选 → 购买 / 存钱 →
+      调整上阵 → 拼接羁绊 → <b>调整站位</b> → 战斗结算 → 读取排名与血量 → 修正计划
+    </p>
+  </div>
+  <ul>
+    <li><b>单次循环时长约 15–30 秒</b>，与人的短时注意力周期高度吻合。</li>
+    <li><b>每一步都有明确反馈</b>：刷新有开奖感、购买有"变强"感、站位有"我猜对了"感、战斗有胜负感。</li>
+    <li><b>关键设计：循环的"启动成本"极低。</b>玩家不需要做出任何"大决定"就能推进——他只需要点一下刷新。这让云顶在"我已经有点累了但还能再来一回合"状态下依然可玩。</li>
+  </ul>
+  <div class="box insight">
+    <div class="bt">设计洞察 · 微循环的"低门槛推进 + 高门槛优化"</div>
+    <p>这是云顶留存结构中最精妙的一层：<b>推进这一回合的门槛极低（点一下就行），但把这一回合做好的门槛极高（涉及概率、经济、站位、对手侦查）</b>。于是同一套循环同时服务了休闲玩家（推进）与硬核玩家（优化）。</p>
+    <p>对比很多失败的自走棋产品，它们把"推进"本身也做得很复杂（如需要大量手动合成、繁琐的装备管理），导致休闲玩家在微循环层就被劝退。</p>
+  </div>
+
+  <h3 id="s3-2">3.2 局内循环（25–40 分钟）：一局的分幕结构</h3>
+  <p>一局排位赛是一段被精心编排的<b>四幕剧</b>：</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>幕</th><th>阶段</th><th>时长占比</th><th>玩家在做什么</th><th>情绪基调</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>第一幕<br>规划</b></td>
+        <td class="num">1-1 ~ 2-7</td>
+        <td class="num">约 30%</td>
+        <td>低强度打野怪、攒钱、观察别人在玩什么、确定方向</td>
+        <td>平静、期待、略带无聊（"还没开始"）</td>
+      </tr>
+      <tr>
+        <td><b>第二幕<br>下注</b></td>
+        <td class="num">3-1 ~ 3-7</td>
+        <td class="num">约 18%</td>
+        <td>第一次大规模 D 卡，阵容定型，血量开始分化</td>
+        <td><span class="tag-inline r">焦虑峰值</span>紧张、赌博感</td>
+      </tr>
+      <tr>
+        <td><b>第三幕<br>执行</b></td>
+        <td class="num">4-1 ~ 5-7</td>
+        <td class="num">约 32%</td>
+        <td>补关键卡、追三星、拉等级、根据对手转阵</td>
+        <td><span class="tag-inline">心流主区间</span>专注、掌控感强</td>
+      </tr>
+      <tr>
+        <td><b>第四幕<br>决战</b></td>
+        <td class="num">6-1 ~ 结束</td>
+        <td class="num">约 20%</td>
+        <td>1v1 ~ 3 人残局，每回合都可能淘汰，站位博弈白热化</td>
+        <td><span class="tag-inline g">高峰体验</span>紧张、兴奋、成就感</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 1000 330" role="img" aria-label="局内四幕结构与紧张度示意">
+      <defs>
+        <linearGradient id="tg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#cfd8e3"/><stop offset="30%" stop-color="#c87b6f"/>
+          <stop offset="55%" stop-color="#5aa79a"/><stop offset="100%" stop-color="#256e7c"/>
+        </linearGradient>
+      </defs>
+      <rect x="40" y="26" width="920" height="32" rx="4" fill="url(#tg)"/>
+      <g font-size="12.5" fill="#fff" font-weight="700" text-anchor="middle">
+        <text x="178" y="47">第一幕 · 规划</text>
+        <text x="400" y="47">第二幕 · 下注</text>
+        <text x="608" y="47">第三幕 · 执行</text>
+        <text x="858" y="47">第四幕 · 决战</text>
+      </g>
+      <g font-size="11.5" fill="#66707e" text-anchor="middle">
+        <text x="178" y="80">1-1 ~ 2-7 ｜ 约 30%</text>
+        <text x="400" y="80">3-1 ~ 3-7 ｜ 约 18%</text>
+        <text x="608" y="80">4-1 ~ 5-7 ｜ 约 32%</text>
+        <text x="858" y="80">6-1 ~ 决赛 ｜ 约 20%</text>
+      </g>
+
+      <line x1="40" y1="102" x2="960" y2="102" stroke="#e3e7ee"/>
+      <text x="40" y="95" font-size="11.5" fill="#66707e">情绪紧张度</text>
+
+      <g stroke="#e3e7ee" stroke-dasharray="4 5">
+        <line x1="178" y1="102" x2="178" y2="292"/>
+        <line x1="340" y1="102" x2="340" y2="292"/>
+        <line x1="560" y1="102" x2="560" y2="292"/>
+        <line x1="740" y1="102" x2="740" y2="292"/>
+      </g>
+      <line x1="40" y1="292" x2="960" y2="292" stroke="#c8d0da"/>
+
+      <polyline fill="none" stroke="#b03a2e" stroke-width="2.5" stroke-linejoin="round"
+        points="40,275 130,271 220,265 300,254 340,206 390,221 440,217 500,202 560,194 620,182 700,170 780,158 850,144 920,128 960,120"/>
+      <circle cx="340" cy="206" r="5" fill="#b03a2e"/>
+      <circle cx="960" cy="120" r="5" fill="#b03a2e"/>
+      <g font-size="11.5" fill="#b03a2e" font-weight="700">
+        <text x="332" y="198" text-anchor="end">D 卡焦虑点</text>
+        <text x="958" y="110" text-anchor="end">高峰体验</text>
+      </g>
+
+      <g font-size="12" fill="#2c3440" text-anchor="middle" font-weight="600">
+        <text x="178" y="314">阵容方向确定</text>
+        <text x="340" y="314">阵容定型</text>
+        <text x="560" y="314">补强 / 转阵</text>
+        <text x="740" y="314">淘汰开始</text>
+        <text x="925" y="314">吃鸡 / 出局</text>
+      </g>
+    </svg>
+    <figcaption><b>图 1 · 局内四幕与紧张度曲线。</b>注意第二幕的"焦虑尖峰"——这是设计上的双刃剑：它制造了整局最强烈的情绪波动（正面），但也可能让玩家在阵容没 D 出来时提前判定"这局没了"（负面，详见 4.4）。</figcaption>
+  </figure>
+
+  <h3 id="s3-3">3.3 日常循环与赛季循环</h3>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">DAILY LOOP ｜ 1–3 小时</div>
+      <div style="font-weight:700;margin-bottom:6px">日常循环</div>
+      <div class="d">
+        首局/首胜奖励 → 排位分数变动 → 宝典任务进度 → "再来一局把分补回来" → 达到当日情绪阈值后下线<br><br>
+        <b>关键钩子：</b>宝典任务把"要不要再玩一局"从"想不想玩"变成了"任务还差一点"。这是把<b>内在动机（想玩）替换为外在动机（要完成）</b>的标准运营手法，用于对冲情绪低谷期的流失。
+      </div>
+    </div>
+    <div class="mini">
+      <div class="k">SEASON LOOP ｜ 约 13 周</div>
+      <div style="font-weight:700;margin-bottom:6px">赛季循环</div>
+      <div class="d">
+        新 Set 上线 → <b>探索期</b>（混沌、大量试错、社区讨论爆炸）→ <b>成型期</b>（主流阵容出现）→ <b>内卷期</b>（Meta 固化、胜率压力）→ <b>倦怠期</b>（留存低点）→ 新 Set 预告与怀旧活动 → 重置<br><br>
+        <b>这是云顶整个长线结构中最脆弱、也最需要运营介入的一环。</b>
+      </div>
+    </div>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 1000 300" role="img" aria-label="赛季循环的玩家活跃度曲线">
+      <line x1="70" y1="250" x2="960" y2="250" stroke="#c8d0da"/>
+      <line x1="70" y1="30" x2="70" y2="250" stroke="#c8d0da"/>
+      <text x="70" y="275" font-size="12" fill="#66707e" text-anchor="start">Set 上线</text>
+      <text x="515" y="275" font-size="12" fill="#66707e" text-anchor="middle">Set 中期</text>
+      <text x="960" y="275" font-size="12" fill="#66707e" text-anchor="end">下一 Set 上线</text>
+      <g font-size="11" fill="#8c95a3">
+        <text x="82" y="42">活跃度 / 新鲜感</text>
+      </g>
+      <path d="M80,240 C140,70 200,70 260,105 C330,145 380,120 430,150
+               C480,180 520,215 570,225 C620,233 660,235 700,215
+               C740,192 780,150 820,130 C860,112 900,60 950,58 L950,250 L80,250 Z"
+            fill="#e6f2f4"/>
+      <path d="M80,240 C140,70 200,70 260,105 C330,145 380,120 430,150
+               C480,180 520,215 570,225 C620,233 660,235 700,215
+               C740,192 780,150 820,130 C860,112 900,60 950,58"
+            fill="none" stroke="#0e7482" stroke-width="2.5"/>
+      <g stroke="#b03a2e" stroke-dasharray="5 4" stroke-width="2">
+        <line x1="560" y1="30" x2="560" y2="250"/>
+      </g>
+      <rect x="470" y="196" width="200" height="58" rx="4" fill="#fbeceb" stroke="#e6b8b2"/>
+      <text x="570" y="216" font-size="12.5" fill="#b03a2e" text-anchor="middle" font-weight="700">Meta 固化期</text>
+      <text x="570" y="235" font-size="11.5" fill="#b03a2e" text-anchor="middle">留存低点 · 需运营对冲</text>
+      <g font-size="11.5" fill="#0e7482" font-weight="600" text-anchor="middle">
+        <text x="180" y="52">探索期（峰值）</text>
+        <text x="880" y="46">回归潮</text>
+      </g>
+      <circle cx="560" cy="225" r="4" fill="#b03a2e"/>
+    </svg>
+    <figcaption><b>图 2 · 赛季活跃度曲线（示意）。</b>云顶每个 Set 会经历一次"高峰—衰减—回流"的完整波形。波形本身不可怕，可怕的是<b>波谷持续过久</b>。虚线位置（约第 7–10 周）就是官方必须用"平衡补丁 / 限时模式 / 怀旧活动"介入的窗口期。</figcaption>
+  </figure>
+
+  <h4>钩子密度表：四层循环的反馈结构对比</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>循环层</th><th>周期</th><th>反馈类型</th><th>爽点强度</th><th>钩子密度</th><th>主要驱动</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>微循环</b></td><td class="num">15–30 秒</td>
+        <td>操作性反馈（刷新、购买、站位）</td>
+        <td><span class="tag-inline">低</span></td>
+        <td>极高（每分钟 2–4 次）</td>
+        <td>即时满足、掌控感</td>
+      </tr>
+      <tr>
+        <td><b>局内循环</b></td><td class="num">25–40 分钟</td>
+        <td>结果性反馈（名次、血量、吃鸡）</td>
+        <td><span class="tag-inline g">高</span></td>
+        <td>中（每局 1 次结算 + 4–6 次阶段反馈）</td>
+        <td>胜负欲、技能感、社交展示</td>
+      </tr>
+      <tr>
+        <td><b>日常循环</b></td><td class="num">1–3 小时</td>
+        <td>累积性反馈（分数、宝典、任务）</td>
+        <td><span class="tag-inline p">中</span></td>
+        <td>中低（每日 1–3 次）</td>
+        <td>目标驱动、损失厌恶</td>
+      </tr>
+      <tr>
+        <td><b>赛季循环</b></td><td class="num">约 13 周</td>
+        <td>身份性反馈（段位、收藏、荣誉）</td>
+        <td><span class="tag-inline g">极高</span></td>
+        <td>低（每季 2–3 次）</td>
+        <td>稀缺性、使命感、社交比较</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">结构评价</div>
+    <p>这四层的组合是<b>"高频低强度 + 低频高强度"的教科书式配置</b>：微循环保证"手不会停"，局内循环保证"每次都有意义"，日常循环保证"有理由再来一次"，赛季循环保证"永远有下一个大目标"。</p>
+    <p>一个常见的失败配置是所有循环都做成"高频低强度"（如很多休闲手游），结果是玩家很快疲劳；另一种失败是"低频高强度"（如纯单机），结果是玩家在中途就流失了。</p>
+  </div>
+
+  <h3 id="s3-4">3.4 循环健康度诊断：最大的风险在赛季中后期</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>风险点</th><th>具体表现</th><th>根因</th><th>现有对冲手段</th><th>可补强方向</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Meta 固化</b><br>（第 6–10 周）</td>
+        <td>全场都在玩同 2–3 套阵容；玩家说"没意思了"</td>
+        <td>数据站把"找最优解"的时间从数天压到数小时；且卡池结构的强弱点收敛</td>
+        <td>平衡补丁、强化符文随机性、限时模式</td>
+        <td>赛季中期引入<b>"符文池轮换"</b>或"限时变异规则"，主动制造小规模混沌</td>
+      </tr>
+      <tr>
+        <td><b>学习成本税</b></td>
+        <td>每 13 周回归的老玩家需要重新学 60+ 弈子、40+ 装备</td>
+        <td>整套重置的必然代价</td>
+        <td>赛季预告、训练模式、社区攻略</td>
+        <td>提供"<b>赛季速成模式</b>"：前 5 局使用简化卡池，逐步解锁真实卡池</td>
+      </tr>
+      <tr>
+        <td><b>垃圾时间</b></td>
+        <td>"我已经死了，但还要再打 12 分钟"</td>
+        <td>血量健康但阵容已无竞争力（详见 4.4）</td>
+        <td>狂暴模式可作为替代出口</td>
+        <td>引入"<b>主动认输 / 加速结算</b>"机制，或给予"名次外目标"（如挑战任务）让重局仍有意义</td>
+      </tr>
+      <tr>
+        <td><b>日常循环空转</b></td>
+        <td>宝典任务完成后，当日缺乏回访理由</td>
+        <td>外在动机覆盖了内在动机，任务结束后动机断崖</td>
+        <td>每日首胜、活动任务</td>
+        <td>设计<b>"每日变体规则"</b>（如"今日所有对局强化符文翻倍"），把每日内容做成"事件"而非"任务"</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 04 -->
+<section id="s4">
+  <div class="sec-head">
+    <div class="num">SECTION 04</div>
+    <h2>心流拆解</h2>
+    <p class="desc">用挑战/技能匹配模型逐回合建模，定位云顶的心流通道区间、焦虑区与中断点。</p>
+  </div>
+
+  <h3 id="s4-1">4.1 单局心流曲线（核心分析）</h3>
+  <p>按 Csikszentmihalyi 的三通道模型，玩家的体验由其感知到的<b>挑战强度</b>与<b>自身掌控感</b>的相对关系决定：</p>
+  <ul>
+    <li><b>挑战 &gt; 掌控感</b> → 焦虑区（Anxiety）：紧张但可能产生挫败</li>
+    <li><b>挑战 ≈ 掌控感</b> → 心流通道（Flow Channel）：专注、忘我、时间感扭曲</li>
+    <li><b>挑战 &lt; 掌控感</b> → 无聊区（Boredom）：放松但容易走神、想退出</li>
+  </ul>
+  <p>下面这张图把云顶一局拆解到回合粒度。三条线分别是：<b>挑战强度</b>（系统施加的压力）、<b>玩家掌控感</b>（玩家自认为能应对的程度）、<b>情绪紧张度</b>（主观唤醒水平）。</p>
+
+  <figure>
+    <svg viewBox="0 0 1000 440" role="img" aria-label="云顶之弈单局心流曲线">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#8c95a3"/>
+        </marker>
+      </defs>
+
+      <!-- 区域底色 -->
+      <rect x="70" y="30" width="890" height="340" fill="#fbfcfd"/>
+      <polygon points="90,227 175,220 250,217 290,215 290,275 250,282 175,295 90,309" fill="#cfd8e3" opacity="0.55"/>
+      <polygon points="310,175 330,166 400,186 430,196 430,236 400,227 330,251 310,247" fill="#f2cfca" opacity="0.7"/>
+      <polygon points="470,193 540,173 610,146 680,118 750,98 820,74 890,54 945,40 945,47 890,61 820,81 750,105 680,129 610,156 540,183 470,207"
+               fill="#bfe0d6" opacity="0.85"/>
+
+      <!-- 网格与坐标轴 -->
+      <g stroke="#eef1f6">
+        <line x1="70" y1="115" x2="960" y2="115"/>
+        <line x1="70" y1="200" x2="960" y2="200"/>
+        <line x1="70" y1="285" x2="960" y2="285"/>
+      </g>
+      <line x1="70" y1="370" x2="960" y2="370" stroke="#8c95a3" stroke-width="1.5"/>
+      <line x1="70" y1="30" x2="70" y2="370" stroke="#8c95a3" stroke-width="1.5"/>
+      <text x="62" y="34" font-size="11" fill="#8c95a3" text-anchor="end">高</text>
+      <text x="62" y="374" font-size="11" fill="#8c95a3" text-anchor="end">低</text>
+
+      <!-- 阶段分隔 -->
+      <g stroke="#dde3ea" stroke-dasharray="4 5">
+        <line x1="330" y1="30" x2="330" y2="370"/>
+        <line x1="470" y1="30" x2="470" y2="370"/>
+        <line x1="750" y1="30" x2="750" y2="370"/>
+      </g>
+
+      <!-- 曲线 -->
+      <polyline fill="none" stroke="#b03a2e" stroke-width="2.6" stroke-linejoin="round"
+        points="90,309 175,295 250,282 330,166 400,186 470,193 540,173 610,146 680,118 750,98 820,74 890,54 945,40"/>
+      <polyline fill="none" stroke="#0e7482" stroke-width="2.6" stroke-linejoin="round"
+        points="90,227 175,220 250,217 330,251 400,227 470,207 540,183 610,156 680,129 750,105 820,81 890,61 945,47"/>
+      <polyline fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="7 5" stroke-linejoin="round"
+        points="90,302 175,295 250,275 330,173 400,200 470,207 540,186 610,159 680,132 750,112 820,84 890,57 945,44"/>
+
+      <!-- 区域标注 -->
+      <text x="150" y="262" font-size="12.5" fill="#5a6673" font-weight="700" text-anchor="middle">无聊区</text>
+      <text x="150" y="280" font-size="11" fill="#7a8593" text-anchor="middle">Boredom</text>
+      <text x="352" y="330" font-size="12.5" fill="#a3372a" font-weight="700" text-anchor="middle">焦虑区</text>
+      <text x="352" y="347" font-size="11" fill="#b0574c" text-anchor="middle">Anxiety</text>
+      <text x="700" y="60" font-size="12.5" fill="#1d6b5e" font-weight="700" text-anchor="middle">心流通道</text>
+      <text x="700" y="77" font-size="11" fill="#3d8578" text-anchor="middle">Flow Channel</text>
+
+      <!-- 关键点标注 -->
+      <circle cx="330" cy="166" r="5" fill="#b03a2e"/>
+      <g font-size="11.5" fill="#b03a2e" font-weight="700"><text x="340" y="152">3-1 第一次大 D 卡</text></g>
+      <g font-size="11" fill="#b03a2e"><text x="340" y="167">挑战骤升、掌控感骤降</text></g>
+
+      <circle cx="750" cy="98" r="5" fill="#0e7482"/>
+      <g font-size="11.5" fill="#0e7482" font-weight="700"><text x="740" y="88" text-anchor="end">6-1 淘汰开始</text></g>
+
+      <circle cx="330" cy="251" r="4.5" fill="#0e7482"/>
+      <g font-size="11" fill="#0e7482"><text x="322" y="272" text-anchor="end">掌控感谷底</text></g>
+
+      <!-- X 轴刻度 -->
+      <g font-size="11.5" fill="#66707e" text-anchor="middle">
+        <text x="90" y="390">1-1</text>
+        <text x="175" y="390">2-1</text>
+        <text x="250" y="390">2-5</text>
+        <text x="330" y="390">3-1</text>
+        <text x="400" y="390">3-4</text>
+        <text x="470" y="390">4-1</text>
+        <text x="540" y="390">4-4</text>
+        <text x="610" y="390">5-1</text>
+        <text x="680" y="390">5-4</text>
+        <text x="750" y="390">6-1</text>
+        <text x="820" y="390">6-4</text>
+        <text x="890" y="390">7-1</text>
+        <text x="945" y="390">决赛</text>
+      </g>
+      <text x="515" y="416" font-size="12" fill="#66707e" text-anchor="middle" font-weight="600">回合进度（阶段-回合）</text>
+
+      <!-- 图例 -->
+      <g font-size="12" fill="#2c3440">
+        <line x1="70" y1="428" x2="100" y2="428" stroke="#b03a2e" stroke-width="2.6"/>
+        <text x="108" y="432">挑战强度</text>
+        <line x1="196" y1="428" x2="226" y2="428" stroke="#0e7482" stroke-width="2.6"/>
+        <text x="234" y="432">玩家掌控感</text>
+        <line x1="336" y1="428" x2="366" y2="428" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="374" y="432">情绪紧张度</text>
+      </g>
+    </svg>
+    <figcaption><b>图 3 · 云顶之弈单局心流曲线（建模示意）。</b>挑战强度在整局中单调递增（红），而玩家掌控感呈现"先降后升"的反折线（青）。两条线在 <b>4-1 之后开始收敛</b>——这正是玩家进入心流通道的位置，也是云顶体验最好的 12 分钟。第二幕的焦虑尖峰是整局最大的情绪转折点。</figcaption>
+  </figure>
+
+  <h4>曲线分段解读</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>区段</th><th>状态</th><th>玩家主观感受</th><th>设计评价</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>1-1 ~ 2-7</b></td>
+        <td><span class="tag-inline">无聊区</span></td>
+        <td>"还行，我知道该干什么，但有点走神"——很多玩家会在这段时间切出去看手机/看数据站</td>
+        <td><b>必要的代价。</b>这段是"经济铺垫期"，没有它就没有后期的爆发感。但 8–10 分钟的铺垫对移动端用户偏长，是狂暴模式存在的根本原因。</td>
+      </tr>
+      <tr>
+        <td><b>3-1 ~ 3-7</b></td>
+        <td><span class="tag-inline r">焦虑区</span></td>
+        <td>"我 D 了一堆钱没成型""别人的阵容已经起来了""我这局是不是没了"</td>
+        <td><b>设计上的双刃剑。</b>它提供了整局最强的情绪波动（正面），但也是"提前放弃"的高发窗口（负面）。见 4.4。</td>
+      </tr>
+      <tr>
+        <td><b>4-1 ~ 5-7</b></td>
+        <td><span class="tag-inline">心流主区</span></td>
+        <td>"我知道我在干什么，每一步都有反馈"——时间感扭曲，最容易"再来一局"</td>
+        <td><b>核心体验区。</b>此时挑战与技能匹配度最高，决策密度最密，且决策结果可在 30 秒内验证。</td>
+      </tr>
+      <tr>
+        <td><b>6-1 ~ 决赛</b></td>
+        <td><span class="tag-inline g">高峰体验</span></td>
+        <td>"就剩 3 家了""这波站位移对了"——生理唤醒显著提升（心跳加快、手心出汗）</td>
+        <td><b>峰值设计成功。</b>淘汰机制天然制造倒计时压力，1v1 阶段的信息博弈（互相看站位）是云顶唯一的"实时对抗"时刻。</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box insight">
+    <div class="bt">关键结论 · 云顶的心流是"后半段型"体验</div>
+    <p>与 MOBA 不同（MOBA 的心流几乎全程在线，因为操作密度恒定），<b>云顶的心流是渐进爬升、后置爆发的结构</b>：前 30% 时间在无聊区，中间 18% 在焦虑区，只有后 52% 真正处于心流通道。</p>
+    <p>这带来三个推论：</p>
+    <ul>
+      <li><b>玩家"再来一局"的驱动力，其实来自上一局的后半段记忆。</b>所以"这局 3-1 就崩了"的伤害远超表面上看起来的——它剥夺的正是心流主区间。</li>
+      <li><b>缩短前期铺垫，是体验优化的第一优先级。</b>狂暴模式的成功、以及各种"开局更强势"的平衡调整，方向都是对的。</li>
+      <li><b>焦虑区必须被"安全网"托住。</b>如果 3-1 没成型就无法翻盘，那焦虑区就会退化成纯粹的挫败区。</li>
+    </ul>
+  </div>
+
+  <h3 id="s4-2">4.2 心流锚点：为什么每局都至少有一次"爽点"</h3>
+  <p>心流不是一个连续状态，而是由一连串"锚点事件"串起来的。云顶在每一局中都<b>保证性地</b>嵌入了若干锚点，让玩家即使没吃鸡也能带走一个高光记忆。</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>锚点类型</th><th>触发条件</th><th>出现概率（观感）</th><th>官方如何放大</th><th>心理作用</th></tr></thead>
+    <tbody>
+      <tr><td><b>关键卡到手</b></td><td>刷到阵容核心卡 / 追到 2 星</td><td>每局多次</td><td>卡面金光、音效、购买动画</td><td>即时满足，微循环正反馈</td></tr>
+      <tr><td><b>羁绊成型</b></td><td>达到羁绊断点</td><td>每局 1–3 次</td><td>羁绊图标点亮、棋盘特效</td><td>阶段性成就（"我完成了一件事"）</td></tr>
+      <tr><td><b>连胜播报</b></td><td>连胜持续</td><td>中前局常见</td><td>全屏播报、"XX 正在连胜"</td><td><b>社交可见性</b>——其他人也看得到</td></tr>
+      <tr><td><b>1v1 翻盘</b></td><td>残局站位置换后获胜</td><td>低概率</td><td>无（玩家自发归因）</td><td><b>技能感峰值</b>——最容易发帖分享的时刻</td></tr>
+      <tr><td><b>三星高费</b></td><td>追到 3 星 4/5 费</td><td>罕见</td><td>进场特效、伤害数字放大</td><td><b>社交货币</b>——"神话级"成就</td></tr>
+      <tr><td><b>吃鸡</b></td><td>第 1 名</td><td>约 1/8</td><td>结算动画、胜利音乐、段位加分</td><td>峰值体验，驱动下一局</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计洞察 · 锚点密度的"地板保障"</div>
+    <p>云顶真正厉害的地方是：<b>即使玩家一局第 8 名出局，他依然会经历 1–3 次"羁绊成型"和若干次"关键卡到手"。</b>这些锚点保证了下限体验——不存在"白玩一局"的情况。</p>
+    <p>对比一些失败的自走棋产品，它们的心流锚点全部集中在"赢"这一个点上，导致 7/8 的玩家在每局结束时体验为空。这是设计上的重大失误：<b>心流锚点必须分层，且低层锚点的触发频率必须远高于高层锚点。</b></p>
+  </div>
+
+  <h3 id="s4-3">4.3 抗挫设计三件套</h3>
+  <p>云顶的挫败管理是目前所有品类里做得最完整的之一。核心是三个相互叠加的机制：</p>
+
+  <div class="grid3">
+    <div class="mini">
+      <div class="k">ANTI-FRUSTRATION 01</div>
+      <div style="font-weight:700;font-size:15px">100 点血 = 缓冲池</div>
+      <div class="d">单次失败 5–20 点伤害，意味着<b>约 6–15 次失败</b>才被淘汰。玩家的失败是"渐进的"而非"突发的"，几乎不会出现"一波没打好直接结束"的暴毙感。</div>
+    </div>
+    <div class="mini">
+      <div class="k">ANTI-FRUSTRATION 02</div>
+      <div style="font-weight:700;font-size:15px">前 4 名即算胜</div>
+      <div class="d">加分解按名次梯度给分，前 4 名全部加分。这意味着<b>单局 8 个人里有 4 个人获得正反馈</b>（50%），加上"分数小涨"的中间态，实际获得非负反馈的比例接近 <b>75–87.5%</b>。</div>
+    </div>
+    <div class="mini">
+      <div class="k">ANTI-FRUSTRATION 03</div>
+      <div style="font-weight:700;font-size:15px">连败补偿 + 选秀优先</div>
+      <div class="d">连败提供额外金币，共享选秀给血量最低者优先选择权。让"落后"本身变成一个<b>可运营的、有收益的状态</b>，而不是纯粹的痛苦。</div>
+    </div>
+  </div>
+
+  <div class="box insight">
+    <div class="bt">设计洞察 · "第 4 名也算赢"是云顶最重要的一个数字</div>
+    <p>把 8 人混战重构为"名次梯度收益"，而不是"只有第一算赢"，直接改变了整个游戏的情绪结构：</p>
+    <ul>
+      <li><b>它把"赢/输"二元判断，变成了"程度"判断。</b>玩家的目标不再是"必须吃鸡"，而是"尽量往前挤一名"。这大幅降低了单局的失败感受。</li>
+      <li><b>它创造了大量"小胜"。</b>"第 5 名但是输了分的最后一局"和"第 4 名保住了分"在心理上是完全不同的两种体验，后者足以支撑玩家再开一局。</li>
+      <li><b>它优化了分数系统的手感。</b>如果没有梯度，低段位玩家会陷入"打十局加不了分"的死循环，这是很多竞技游戏流失的直接原因。</li>
+    </ul>
+    <p>推论：<b>任何多人竞技产品，都应该认真考虑"是否只有第一名算赢"这个问题。</b>梯度化名次收益，是提高单局正反馈覆盖率性价比最高的一次改动。</p>
+  </div>
+
+  <h3 id="s4-4">4.4 心流中断点诊断：三个必须治理的裂缝</h3>
+
+  <h4>裂缝一：3-1 焦虑区的"提前放弃"</h4>
+  <div class="box risk">
+    <div class="bt">现象 → 归因 → 影响 → 方案</div>
+    <p><b>现象：</b>玩家在 3-2 ~ 3-5 阶段 D 卡失败后，血量和经济都没问题，但心理上已判定"这局没了"，之后 10 分钟处于消极游玩状态。</p>
+    <p><b>归因：</b>挑战强度曲线在 3-1 出现断崖（图 3 红线的尖峰），而玩家掌控感骤降。此时系统没有任何"你还能翻盘"的明确信号。</p>
+    <p><b>影响：</b>单局体验塌方 + 消极游玩会传染给同局其他玩家的观感 + 直接影响下一局的开局意愿。</p>
+    <p><b>可执行方案：</b></p>
+    <ul>
+      <li><b>信号化翻盘路径</b>：当玩家血量/经济排名落后时，在 UI 上明确显示"你仍可通过 X 路径翻盘"（例如"你还有 3 次选秀优先权"）。把隐性的可能性变成显性的希望。</li>
+      <li><b>降低 3-1 的断崖斜率</b>：把"必须在 3-1 定型"的设计松绑，让 4-1 定型也成为可行路线（通过提高中期过渡阵容的强度下限）。</li>
+      <li><b>引入"目标转移"机制</b>：在明显无法进前 4 时，给玩家一个次级目标（如"本局挑战：达成 6 影流羁绊"），给重局赋予意义。</li>
+    </ul>
+  </div>
+
+  <h4>裂缝二：垃圾时间（Dead Time）</h4>
+  <div class="box risk">
+    <div class="bt">现象 → 归因 → 影响 → 方案</div>
+    <p><b>现象：</b>玩家血量健康（比如还有 40 血）但阵容已经完全落后，注定在第 5–6 名出局。此时距对局结束可能还有 8–12 分钟。</p>
+    <p><b>归因：</b>云顶的"血量"与"战力"是解耦的——血量健康不代表阵容有竞争力。系统用血量作为唯一的存活判据，但没有为"战力已死"的玩家提供出口。</p>
+    <p><b>影响：</b>这是云顶单局体验中最明显的负资产。8 人局里通常会有 1–2 人处于这种状态，占用了约 10 分钟的对局时间却零正反馈。</p>
+    <p><b>可执行方案：</b></p>
+    <ul>
+      <li><b>主动退出 + 立即重排</b>：允许玩家在确认无法进前 4 时提前认输，直接开始下一局（分数按当前预测名次结算）。代价是需要防止滥用（设定明确门槛：如血量低于某值且排名后 3）。</li>
+      <li><b>加速后期回合</b>：当剩余玩家 ≤4 时缩短回合准备时间，压缩垃圾时间。这是成本最低的改动。</li>
+      <li><b>重局任务化</b>：给"已无望"的玩家发放本局专属挑战，把垃圾时间转化为收集时间。</li>
+    </ul>
+  </div>
+
+  <h4>裂缝三：高段位的"心流狭窄化"</h4>
+  <div class="box risk">
+    <div class="bt">现象 → 归因 → 影响 → 方案</div>
+    <p><b>现象：</b>大师以上段位，玩家普遍反映"越往上打越不好玩"——因为高段位的容错率极低，任何偏离 Meta 的构筑都会被惩罚，导致所有人打同一套阵容。</p>
+    <p><b>归因：</b>竞技压力会反向压缩决策空间。Meta 固化在低段位是"参考"，在高段位是"纪律"。玩家从"探索者"退化为"执行者"，心流通道随之收窄。</p>
+    <p><b>影响：</b>直接影响最核心、付费意愿最强的一批用户的留存。这是长线运营中最需要盯住的群体。</p>
+    <p><b>可执行方案：</b></p>
+    <ul>
+      <li><b>给高段位单独轮换的规则层</b>：例如高段位限定可用的强化符文池每两周轮换一次，强制 Meta 更新。</li>
+      <li><b>引入"赛季挑战赛"式限时高分模式</b>：用特殊规则（如禁用某些羁绊）制造短期混沌，给"探索型高端玩家"一个释放出口。</li>
+      <li><b>减少"连胜强需求"的排名压力</b>：调整高段位的分数曲线，让"稳定进前 4"也能稳步上分，降低对单一最优解的依赖。</li>
+    </ul>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 05 -->
+<section id="s5">
+  <div class="sec-head">
+    <div class="num">SECTION 05</div>
+    <h2>吸引力拆解：它凭什么让人一局接一局</h2>
+    <p class="desc">用 Octalysis 八角驱动框架逐条对照，并检查驱动力的结构性缺口。</p>
+  </div>
+
+  <p>很多分析会把"好玩"当成一个整体去谈，但"好玩"是由若干可分离的驱动力拼装的。拆开之后，才能看清哪些驱动力是云顶的护城河，哪些是它明显薄弱、可以被竞品攻击的地方。</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>驱动力</th><th>云顶的承载方式</th><th>强度</th><th>分析</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>1. 史诗意义与使命感</b><br><span class="small">Epic Meaning &amp; Calling</span></td>
+        <td>LoL 宇宙 IP、赛季主题叙事、全球赛事、段位称号</td>
+        <td><span class="tag-inline p">中</span></td>
+        <td>IP 提供了极低的认知门槛（"这是我熟悉的英雄"），但云顶的叙事是<b>弱叙事</b>——它不靠剧情驱动，只靠"熟悉的角色在陌生规则下重排"提供新鲜感。这是刻意的：强叙事会提高新赛季的学习成本。</td>
+      </tr>
+      <tr>
+        <td><b>2. 发展与成就</b><br><span class="small">Development &amp; Accomplishment</span></td>
+        <td>段位、王者榜、三星成就、宝典等级、收藏完成度</td>
+        <td><span class="tag-inline">强</span></td>
+        <td>因为没有数值成长，<b>成就系统承担了全部的"变强"表达</b>。段位是唯一的显性能力证明，因此玩家对段位的情绪投入远高于同等竞技游戏。</td>
+      </tr>
+      <tr>
+        <td><b>3. 创造力的授权与反馈</b><br><span class="small">Empowerment of Creativity</span></td>
+        <td>阵容构筑、强化符文组合、装备分配、站位设计</td>
+        <td><span class="tag-inline g">极强 · 护城河</span></td>
+        <td><b>这是云顶第一驱动力。</b>玩家感觉"这套阵容是我搭的"，并在 30 秒内得到验证。强化符文系统把这个空间从"选阵容"扩展到"选这局的规则"，是同类产品难以复制的深度。</td>
+      </tr>
+      <tr>
+        <td><b>4. 所有权与占有欲</b><br><span class="small">Ownership &amp; Possession</span></td>
+        <td>小小英雄、棋盘、击杀特效、宝典收藏品</td>
+        <td><span class="tag-inline">强（商业化核心）</span></td>
+        <td>全部付费点都挂在这一条上。因为棋盘/小小英雄是<b>每局必被他人看到的展示位</b>，收藏价值天然具备社交属性，比单机游戏的收藏有效率得多。</td>
+      </tr>
+      <tr>
+        <td><b>5. 社会影响与关联性</b><br><span class="small">Social Influence &amp; Relatedness</span></td>
+        <td>双人模式、直播、社区 Meta 讨论、数据站</td>
+        <td><span class="tag-inline">中强</span></td>
+        <td>双人模式是重要补强，它把"一个人算"变成"两个人商量"，显著提升了陪伴型玩家的留存。但整体而言，云顶的<b>局内社交弱</b>（8 人基本无交流），社交主要发生在游戏外。</td>
+      </tr>
+      <tr>
+        <td><b>6. 稀缺性与不耐烦</b><br><span class="small">Scarcity &amp; Impatience</span></td>
+        <td>5 费卡池张数少、稀有符文、限定宝典奖励、王者名额</td>
+        <td><span class="tag-inline">强</span></td>
+        <td>稀缺性由<b>数学</b>保证（卡池张数 + 概率表），而不是人为限制，因此玩家感受不到"被卡脖子"的恶意，只觉得"是我运气/技术问题"。这是稀缺性设计的最高级形态。</td>
+      </tr>
+      <tr>
+        <td><b>7. 不可预测性与好奇心</b><br><span class="small">Unpredictability &amp; Curiosity</span></td>
+        <td>商店刷新、强化符文开盲盒、选秀、野怪掉落</td>
+        <td><span class="tag-inline g">极强</span></td>
+        <td><b>这是云顶第二驱动力，也是它的"赌博引擎"。</b>每一次刷新都是一次微型开奖，且成本极低（2 金）。整个游戏在生理层面对应的是可变比率强化（Variable Ratio Reinforcement）——已知最耐久的成瘾结构之一。</td>
+      </tr>
+      <tr>
+        <td><b>8. 损失与逃避</b><br><span class="small">Loss &amp; Avoidance</span></td>
+        <td>血量、掉分、赛季重置、宝典进度作废</td>
+        <td><span class="tag-inline p">中</span></td>
+        <td>云顶对损失驱动用得<b>很克制</b>：有降级保护、赛季重置对所有人一视同仁、宝典进度压力温和。这符合"白帽驱动为主"的健康取向，代价是缺少"逼你上线"的强压力钩子。</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>驱动力结构诊断</h4>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">强项（护城河）</div>
+      <div class="d">
+        <b>3 创造力</b> × <b>7 不可预测</b> × <b>6 稀缺性</b><br><br>
+        这三条构成了云顶的"核心引力三角"：<b>随机性提供机会、创造力提供应对、稀缺性提供目标</b>。任何想攻击云顶的竞品，都必须在这三条上同时做到接近的水平，否则玩家会立刻感到"这个游戏不用脑子"或"这个游戏没有惊喜"。
+      </div>
+    </div>
+    <div class="mini">
+      <div class="k">弱项（可被攻击的缺口）</div>
+      <div class="d">
+        <b>5 社会关联</b> 与 <b>1 史诗意义</b> 相对薄弱。<br><br>
+        局内几乎零社交互动，导致：<b>①</b> 独狼玩家的情感黏性低于社交型游戏；<b>②</b> 缺少"因为朋友在线所以上线"的自然回流路径；<b>③</b> 弱叙事让赛季主题更像是"皮肤包装"而非"世界事件"。<br><br>
+        这解释了为什么官方近年在强推双人模式与赛季主题活动——正是在补这两个缺口。
+      </div>
+    </div>
+  </div>
+
+  <div class="box insight">
+    <div class="bt">补充驱动：两个算法外的"隐性吸引力"</div>
+    <p><b>① 归因结构设计（Attribution Design）——"赢是我强，输是我菜"。</b></p>
+    <p>云顶通过压制战斗结算的随机性，成功把失败归因引导到了"我的决策"而非"系统"。这个归因结构极其珍贵：它让失败变得<b>可学习、可接受、有建设性</b>。很多游戏玩家输了会骂匹配、骂队友、骂概率，而云顶玩家输了更常说的是"我这波该转阵的"——这是一个可以直接观察到的社区文化差异。</p>
+    <p><b>② 知识型爽感（Knowledge as Social Currency）。</b></p>
+    <p>云顶的隐性知识极多：装备合成表、羁绊最优解、概率表、站位技巧、经济节奏。掌握这些知识会产生真实的社交资本（"你怎么知道这个？"）。这让"学习"本身成为一种奖励，而不是负担——<b>是内容型游戏延长生命周期最有效的手段之一。</b></p>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 06 -->
+<section id="s6">
+  <div class="sec-head">
+    <div class="num">SECTION 06</div>
+    <h2>付费点与商业化拆解</h2>
+    <p class="desc">运营视角：付费点分布、心理机制、转化漏斗、LTV 结构与可优化空间。</p>
+  </div>
+
+  <h3>6.1 商业化前提：一条不能破的铁律</h3>
+  <div class="box insight">
+    <div class="bt">核心前提</div>
+    <p>云顶的商业化建立在一条铁律上：<b>付费不能购买任何影响胜负的东西。</b></p>
+    <p>这条铁律有两个来源：</p>
+    <ul>
+      <li><b>品牌层面</b>——它挂在 LoL 这棵"竞技公平"的大树上，一旦云顶卖强度，会直接污染母品牌的公信力，损失远大于收益。</li>
+      <li><b>产品层面</b>——如第 1 章所述，云顶的核心体验就是"决策质量带来结果"。如果决策质量可以购买，整个游戏的核心循环会当场崩塌。</li>
+    </ul>
+    <p>因此，<b>云顶全部的付费点都被迫集中在"表达性"与"社交可见性"上</b>。这不是保守，而是一次非常清晰的商业取舍：<b>用更低的 ARPU 换更长的生命周期和更低的获客成本。</b></p>
+  </div>
+
+  <h3 id="s6-1">6.2 付费点全景表</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>付费点</th><th>类型</th><th>形态</th><th>激发的心理动机</th><th>目标人群</th><th>LTV 贡献（定性）</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>云顶宝典 / 通行证</b></td>
+        <td>赛季订阅</td>
+        <td>免费轨 + 付费轨；做任务升级领奖励；支持直接购买等级</td>
+        <td>进度累积、沉没成本、目标感、"不用浪费"</td>
+        <td>全体活跃玩家（首充主力）</td>
+        <td><span class="tag-inline g">高 · 基本盘</span></td>
+      </tr>
+      <tr>
+        <td><b>宝典等级直购</b></td>
+        <td>加速付费</td>
+        <td>赛季末集中购买，追赶未完成的进度</td>
+        <td>损失厌恶（"进度要作废了"）</td>
+        <td>时间不足的上班族玩家</td>
+        <td><span class="tag-inline p">中高 · 季节性峰值</span></td>
+      </tr>
+      <tr>
+        <td><b>小小英雄（直购）</b></td>
+        <td>外观直购</td>
+        <td>标准化形象，可选变体与配色</td>
+        <td>所有权、身份表达、"可爱即购买"</td>
+        <td>泛用户、女性玩家占比高</td>
+        <td><span class="tag-inline g">高</span></td>
+      </tr>
+      <tr>
+        <td><b>宝库 / 抽奖系统</b></td>
+        <td>随机付费</td>
+        <td>用代币抽取稀有小小英雄变体，含保底机制</td>
+        <td>不可预测性、稀缺性、赌博快感</td>
+        <td>高付费意愿的收藏型玩家</td>
+        <td><span class="tag-inline g">极高 · ARPPU 引擎</span></td>
+      </tr>
+      <tr>
+        <td><b>棋盘 / 竞技场</b></td>
+        <td>外观直购</td>
+        <td>主题棋盘，影响整局视觉氛围</td>
+        <td>所有权、氛围营造、赛季主题认同</td>
+        <td>中重度玩家</td>
+        <td><span class="tag-inline p">中高</span></td>
+      </tr>
+      <tr>
+        <td><b>击杀特效 / 播报</b></td>
+        <td>外观直购</td>
+        <td>回合结束时的视觉特效、语音播报员</td>
+        <td>社交可见性、"被围观"的爽感</td>
+        <td>重视展示的玩家</td>
+        <td><span class="tag-inline p">中</span></td>
+      </tr>
+      <tr>
+        <td><b>表情 / 互动动作</b></td>
+        <td>低价外观</td>
+        <td>局内表情、互动动作</td>
+        <td>社交表达、低成本参与感</td>
+        <td>低付费门槛用户（破冰首充）</td>
+        <td><span class="tag-inline">低单价 · 高转化</span></td>
+      </tr>
+      <tr>
+        <td><b>限定 / 联动款</b></td>
+        <td>稀缺外观</td>
+        <td>赛季主题、IP 联动、节日限定，限时销售</td>
+        <td>稀缺性、FOMO、错失恐惧</td>
+        <td>IP 粉丝、收藏型玩家</td>
+        <td><span class="tag-inline g">高 · 冲动型收入</span></td>
+      </tr>
+    </tbody>
+    <caption>价格与具体形式上均存在地区差异，且随版本调整；此处描述的是付费点的结构与功能定位。</caption>
+  </table>
+  </div>
+
+  <h4>付费点分布矩阵：为什么全部落在"不影响胜负"的一侧</h4>
+  <figure>
+    <svg viewBox="0 0 1000 460" role="img" aria-label="付费点分布矩阵">
+      <!-- 坐标 -->
+      <line x1="110" y1="390" x2="940" y2="390" stroke="#8c95a3" stroke-width="1.5"/>
+      <line x1="110" y1="50" x2="110" y2="390" stroke="#8c95a3" stroke-width="1.5"/>
+      <text x="525" y="425" font-size="12.5" fill="#2c3440" text-anchor="middle" font-weight="600">功能性（对胜负的影响） →</text>
+      <text x="42" y="220" font-size="12.5" fill="#2c3440" text-anchor="middle" font-weight="600" transform="rotate(-90 42 220)">社交可见性 →</text>
+      <line x1="525" y1="50" x2="525" y2="390" stroke="#e3e7ee" stroke-dasharray="5 5"/>
+      <line x1="110" y1="220" x2="940" y2="220" stroke="#e3e7ee" stroke-dasharray="5 5"/>
+      <text x="128" y="70" font-size="11.5" fill="#8c95a3">高可见 / 低影响</text>
+      <text x="922" y="70" font-size="11.5" fill="#8c95a3" text-anchor="end">高可见 / 高影响</text>
+      <text x="128" y="376" font-size="11.5" fill="#8c95a3">低可见 / 低影响</text>
+      <text x="922" y="376" font-size="11.5" fill="#8c95a3" text-anchor="end">低可见 / 高影响</text>
+      <!-- 禁区 -->
+      <rect x="525" y="50" width="415" height="170" fill="#fbeceb" opacity="0.6"/>
+      <text x="732" y="140" font-size="13" fill="#b03a2e" text-anchor="middle" font-weight="700">付费禁区</text>
+      <text x="732" y="160" font-size="11.5" fill="#b03a2e" text-anchor="middle">违反公平铁律，云顶在此区域为空</text>
+      <!-- 点位 -->
+      <g font-size="12" font-weight="600">
+        <circle cx="145" cy="100" r="10" fill="#0e7482"/><text x="165" y="105" fill="#2c3440">小小英雄直购（最高可见位）</text>
+        <circle cx="250" cy="140" r="9" fill="#0e7482"/><text x="270" y="145" fill="#2c3440">棋盘 / 竞技场</text>
+        <circle cx="300" cy="180" r="11" fill="#b8860b"/><text x="320" y="185" fill="#2c3440">宝库抽奖（稀有变体，含保底）</text>
+        <circle cx="160" cy="215" r="9" fill="#0e7482"/><text x="180" y="220" fill="#2c3440">击杀特效 / 播报员</text>
+        <circle cx="290" cy="266" r="11" fill="#5b4b8a"/><text x="310" y="271" fill="#2c3440">云顶宝典（免费轨 + 付费轨）</text>
+        <circle cx="200" cy="310" r="9" fill="#5b4b8a"/><text x="220" y="315" fill="#2c3440">宝典等级直购（赛季末追赶）</text>
+        <circle cx="140" cy="352" r="8" fill="#0e7482"/><text x="158" y="357" fill="#2c3440">表情 / 互动动作</text>
+      </g>
+    </svg>
+    <figcaption><b>图 4 · 云顶付费点分布矩阵。</b>所有付费点都落在<b>左侧两个象限（低功能性）</b>，其中纵向位置表示它们在社交场景中的曝光度。<b>右半部分（高功能 × 任意可见度）完全留空</b>——这是云顶的商业化禁区，也是它竞技公信力的来源，同时是它 ARPU 天花板低于数值付费类产品的根本原因。</figcaption>
+  </figure>
+
+  <h3 id="s6-2">6.3 付费心理与转化漏斗</h3>
+
+  <h4>转化路径：三级漏斗</h4>
+  <div class="grid3">
+    <div class="mini">
+      <div class="k">STAGE 01 · 破冰</div>
+      <div style="font-weight:700;margin-bottom:6px">免费玩家 → 首充</div>
+      <div class="d">入口产品：表情、低价小小英雄、宝典。<br>关键手法：<b>把付费挂在一个"你已经投入了很多时间"的进度上</b>——宝典的进度条是最典型的设计，它让"买"变成"不买才亏"。</div>
+    </div>
+    <div class="mini">
+      <div class="k">STAGE 02 · 常规化</div>
+      <div style="font-weight:700;margin-bottom:6px">首充 → 每赛季付费</div>
+      <div class="d">入口产品：宝典（每赛季复购）。<br>关键手法：<b>把一次性付费改造成订阅式关系</b>。赛季制天然提供了"每 13 周一次的复购节点"，这是云顶商业模式最优雅的部分——不需要卖强度，只需要卖"跟上赛季"。</div>
+    </div>
+    <div class="mini">
+      <div class="k">STAGE 03 · 深度</div>
+      <div style="font-weight:700;margin-bottom:6px">常规付费 → 高 ARPPU</div>
+      <div class="d">入口产品：宝库抽奖、限定联动款、稀有变体收藏。<br>关键手法：<b>抽奖 + 保底 + 限时</b>的三件套。用保底维持"公平感"（不会无底洞），用限时制造 FOMO。</div>
+    </div>
+  </div>
+
+  <h4>为什么这套结构是"运营友好"的</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>特征</th><th>说明</th><th>运营收益</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>付费与赛季强绑定</b></td>
+        <td>宝典按赛季重置，每个新 Set 都是天然的付费节点</td>
+        <td>把"内容更新"直接转化为"收入节拍"，不需要额外制造付费活动</td>
+      </tr>
+      <tr>
+        <td><b>付费不引发公平争议</b></td>
+        <td>所有付费点都不影响胜负</td>
+        <td>零"pay-to-win"舆情成本，社区信任度高，可长期复用同一套商业化框架</td>
+      </tr>
+      <tr>
+        <td><b>付费点全部可被看见</b></td>
+        <td>小小英雄、棋盘、特效都出现在每局的公共场景里</td>
+        <td>付费用户成为<b>免费的广告位</b>，形成"看到别人有 → 我也想有"的自然转化</td>
+      </tr>
+      <tr>
+        <td><b>保底机制透明</b></td>
+        <td>抽奖公示概率与保底次数</td>
+        <td>降低"被坑"感知，把抽奖从"赌博"定位为"收集"，保护长期口碑</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box risk">
+    <div class="bt">商业化的结构性风险</div>
+    <ul>
+      <li><b>ARPU 天花板明显低于数值付费类产品。</b>因为不能卖强度，收入完全依赖"玩家对美的支付意愿 + 收藏欲"，对美术产能的依赖度极高——本质上是把商业压力全部压在了内容团队的产出速度上。</li>
+      <li><b>付费点集中度过高。</b>宝典 + 小小英雄/抽奖贡献了绝大部分收入，一旦赛季主题不讨喜或美术资源不足，收入波动会很明显。</li>
+      <li><b>"收集系统"的深度不足。</b>目前缺乏一个能够承载长期收藏欲的"图鉴/成就展示"体系（如卡牌游戏的收集度、MMO 的成就墙）。这是一个明确的、可通过运营手段补齐的增长空间。</li>
+      <li><b>新玩家付费动机建立过慢。</b>由于无法用强度吸引付费，"审美的付费动机"需要玩家先玩进去才能建立（通常要 10–20 局）。这导致新玩家的首充转化窗口偏长。</li>
+    </ul>
+  </div>
+
+  <h3 id="s6-3">6.4 国服手游的差异化：商业化"加深"的必然性</h3>
+  <p>国服手游版（金铲铲之战）在保持竞技公平铁律的同时，商业化深度显著高于端游。这是本地市场的必然结果，也是一个很有分析价值的对照案例。</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>维度</th><th>端游云顶（全球）</th><th>国服手游（金铲铲之战）</th><th>差异的运营逻辑</th></tr></thead>
+    <tbody>
+      <tr><td><b>用户盘</b></td><td>PC 端，与 LoL 高度重合</td><td>独立 App，可触达非 LoL 用户</td><td>用户来源更广 → 需要更完整的新手/留存体系</td></tr>
+      <tr><td><b>付费点数量</b></td><td>精简（宝典 + 外观 + 抽奖）</td><td>更丰富（多套宝典/活动、时装、抽卡、礼包等）</td><td>国内手游的付费习惯更接受"高频小额 + 活动驱动"</td></tr>
+      <tr><td><b>活动密度</b></td><td>以赛季为主节奏</td><td>赛季 + 月/周活动 + 节日活动并行</td><td>手游需要更密的回访理由来对抗更高的流失率</td></tr>
+      <tr><td><b>社交绑定</b></td><td>主要以游戏外社交为主</td><td>更强的账号/好友/关系链绑定</td><td>提升迁移成本，提高留存</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box note">
+    <div class="bt">一个值得记录的运营课题：规则漏洞的补偿处理</div>
+    <p>公开社区曾出现过"利用规则漏洞获利玩家的处理与补偿"相关争议（例如只对部分玩家做补偿、其余玩家道具被扣除而无补偿）。这类事件对"付费无强度"的产品伤害尤为严重——因为它的全部付费信任都建立在<b>"我付的钱是安全的"</b>这一条上。</p>
+    <p><b>可提炼的原则：</b>对于以"公平性"为核心资产的产品，任何涉及"玩家资产被回溯扣除"的处理，都必须遵循<b>全员一致、补偿前置、说明透明</b>三条，否则消耗的是无法用一次活动买回来的信任存量。</p>
+  </div>
+
+  <h3 id="s6-4">6.5 拉新与回流</h3>
+  <div class="grid2">
+    <div class="mini">
+      <div class="k">ACQUISITION ｜ 拉新</div>
+      <div class="d">
+        <b>1. 母品牌导流（最强渠道）</b>——LoL 客户端内置入口 + 账号体系直通，获客成本接近零，这是云顶最大的结构性优势。<br><br>
+        <b>2. 赛季主题营销</b>——每个 Set 都是一次"新品发布"，可承载预告片、KOL 联动、IP 联动。<br><br>
+        <b>3. 直播与短视频</b>——云顶的策略复盘类内容天然适合视频化（"这一手你该怎么打"）。<br><br>
+        <b>4. IP 联动与免费获取路径</b>——用 LoL 英雄的知名度降低认知门槛。
+      </div>
+    </div>
+    <div class="mini">
+      <div class="k">RETENTION ｜ 回流</div>
+      <div class="d">
+        <b>1. 赛季重置的"重新入场"机制</b>——这是云顶最强力的回流钩子：<b>无论离开多久，新赛季上线时你和所有人站在同一起跑线</b>。传统游戏里回归玩家会面对巨大的数值落差，而云顶没有这个问题。<br><br>
+        <b>2. 新 Set 的"新鲜感承诺"</b>——"这次是完全新的，你以前学的不算白学（迁移的是能力而非知识）"。<br><br>
+        <b>3. 回流专属任务与追赶机制</b>——目前相对薄弱，是可优化的空间（见 8.4）。<br><br>
+        <b>4. 狂暴模式作为低门槛回流入口</b>——回归玩家不必立刻面对 40 分钟的排位压力。
+      </div>
+    </div>
+  </div>
+  <div class="box insight">
+    <div class="bt">设计洞察 · 赛季制本质上是一台"回流机器"</div>
+    <p>大多数长线游戏的流失是不可逆的：离开 3 个月的玩家回来时会发现"我已经跟不上了"，于是再次离开。</p>
+    <p><b>云顶用"整体重置"把这个问题结构性解决了</b>——时间流逝不会让玩家落后，只会让内容变新。这使它拥有行业内极少见的"高容忍度回流窗口"：一个离开一年的玩家，回归成本和一个新玩家几乎一样低。</p>
+    <p>这是"用重置对抗膨胀"这条设计原则在运营层面的最大红利，也是评估任何长线产品时都值得问的一个问题：<b>我的游戏，允许玩家离开多久？</b></p>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 07 -->
+<section id="s7">
+  <div class="sec-head">
+    <div class="num">SECTION 07</div>
+    <h2>竞品对标矩阵</h2>
+    <p class="desc">横向对比，看清云顶的哪些优势是结构性的，哪些只是先发红利。</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>云顶之弈<br><span class="small">TFT（Riot）</span></th>
+        <th>金铲铲之战<br><span class="small">国服手游（腾讯）</span></th>
+        <th>Dota Auto Chess<br><span class="small">起源 MOD</span></th>
+        <th>炉石酒馆战棋<br><span class="small">Blizzard</span></th>
+        <th>其他自走棋<br><span class="small">（泛称）</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><b>对局时长</b></td><td class="num">25–40 分钟</td><td class="num">20–35 分钟</td><td class="num">30–45 分钟</td><td class="num">15–30 分钟</td><td class="num">20–45 分钟</td></tr>
+      <tr><td><b>局外数值成长</b></td><td>无</td><td>无（保持公平）</td><td>无</td><td>无（但有卡池解锁）</td><td><b>普遍有</b></td></tr>
+      <tr><td><b>内容迭代方式</b></td><td><b>13 周整体重置</b></td><td>同上（国服同步）</td><td>停止更新</td><td>增量更新 + 轮换</td><td>增量更新</td></tr>
+      <tr><td><b>策略分叉装置</b></td><td><b>强化符文（规则级）</b></td><td>同端游 + 本地化特色</td><td>装备 / 羁绊</td><td>英雄技能 + 饰品</td><td>装备 / 羁绊</td></tr>
+      <tr><td><b>付费深度</b></td><td>浅（纯表达）</td><td>中（表达 + 活动 + 抽卡）</td><td>无商业化</td><td>中（战棋与卡牌绑定的商业化）</td><td><b>深（常含强度付费）</b></td></tr>
+      <tr><td><b>竞技生态</b></td><td><b>完整全球赛事体系</b></td><td>国内赛事体系</td><td>无</td><td>有（非核心）</td><td>多数无</td></tr>
+      <tr><td><b>获客成本</b></td><td><b>极低（母品牌导流）</b></td><td>低（微信/QQ 生态）</td><td>依赖 Dota 2 平台</td><td>低（炉石导流）</td><td><b>高</b></td></tr>
+      <tr><td><b>回流友好度</b></td><td><b>极高（重置 = 零落差）</b></td><td>高</td><td>低（已停更）</td><td>中</td><td>低（数值落差）</td></tr>
+      <tr><td><b>核心护城河</b></td><td>IP + 客户端 + 赛季管线 + 符文系统</td><td>移动端 + 本地化运营</td><td>先发</td><td>炉石 IP + 卡牌资产复用</td><td>—</td></tr>
+      <tr><td><b>结构性弱项</b></td><td>前半局铺垫偏长；ARPU 上限受制于"不卖强度"</td><td>付费点密度高，需警惕口碑管理</td><td>无商业化与持续运营能力</td><td>受卡牌业务捆绑，独立迭代空间小</td><td>公平性争议、内容产能不足</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box insight">
+    <div class="bt">对标结论 · 云顶真正的护城河不是玩法</div>
+    <p>自走棋的<b>玩法</b>早已不是秘密——8 人混战、共享卡池、经济利息，任何团队都能抄。</p>
+    <p>云顶真正难以复制的是三件<b>非玩法资产</b>：</p>
+    <ol>
+      <li><b>母品牌导流 + 账号体系</b>（获客成本结构性最低）</li>
+      <li><b>13 周一个完整 Set 的内容管线</b>（需要持续的美术/策划产能，是组织能力问题，不是设计问题）</li>
+      <li><b>"不卖强度"积累的竞技公信力</b>（需要长期克制才能建立，且一旦破坏很难修复）</li>
+    </ol>
+    <p>对自研项目的启示：<b>设计可以被抄，产能与信任不能。</b>做品类对标时，应该优先评估自己能否在"产能"与"信任"这两项上建立优势，而不是把全部精力放在玩法差异上。</p>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 08 -->
+<section id="s8">
+  <div class="sec-head">
+    <div class="num">SECTION 08</div>
+    <h2>系统性问题诊断与优化提案</h2>
+    <p class="desc">按"现象 → 归因 → 提案 → 预期收益 → 风险 → 验证指标"的格式，给出 8 项可落地的改进建议。</p>
+  </div>
+
+  <p class="small">说明：以下问题均基于可观察的玩家体验与社区反馈归纳，提案为作者基于系统设计逻辑给出的建议，不代表官方立场。第 3.4 与 4.4 节已覆盖的问题不再重复。</p>
+
+  <h3>提案 01 · 新手信息过载：分层解锁的卡池</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 01</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>新玩家前 10 局需要同时面对约 60+ 弈子、40+ 装备组合、数十种羁绊与强化符文，认知负荷远超工作记忆上限（7±2）。</td></tr>
+        <tr><td><b>归因</b></td><td>内容量是竞技深度的必需品，但<b>内容的"投放速度"没有被设计</b>。系统默认玩家可以一次性吸收全部信息。</td></tr>
+        <tr><td><b>提案</b></td><td>为新账号提供<b>"渐进卡池"</b>：前 5 局仅开放约 3 个羁绊、15 个弈子、基础装备；每完成一局解锁一批，并在第 10 局恢复完整卡池。<b>仅对未满指定段位的新账号生效</b>，且明确告知"这是新手保护期"。</td></tr>
+        <tr><td><b>预期收益</b></td><td>降低新手 3 日流失；提升 D1/D7 留存；同时因为早期对局阵容更简单，新手更容易获得"我懂了"的掌控感，正面影响心流曲线的前段。</td></tr>
+        <tr><td><b>风险</b></td><td>① 老玩家开小号体验异常，需要匹配隔离；② 会分裂社区讨论内容（"你说的是哪个池子的阵容"）；③ 违反"所有玩家规则一致"的竞技直觉。</td></tr>
+        <tr><td><b>验证指标</b></td><td>新手 D1/D3 留存、前 10 局平均完成率（不中途退出率）、首次进前 4 所需的局数。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 02 · 移动端与 PC 端的操作不对等</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 02</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>移动端在"快速 D 卡"（极限刷新找卡）与"精确站位"（拖拽到指定格）上存在天然的物理劣势。而这两项在关键回合直接影响结果。</td></tr>
+        <tr><td><b>归因</b></td><td>为保持规则一致，两个端共用同一套操作逻辑。但<b>规则公平 ≠ 操作公平</b>——当操作成本差异足够大时，规则公平会被操作差异抵消。</td></tr>
+        <tr><td><b>提案</b></td><td>① 提供<b>"连续刷新"</b>快捷操作（长按连刷，移动端专属手势）；② 提供<b>阵型预设与一键套用</b>（可保存 3 套站位模板）；③ 移动端站位吸附优化与放大镜模式。<b>这些是"操作便利性"而非"能力增强"，不违反公平铁律。</b></td></tr>
+        <tr><td><b>预期收益</b></td><td>提升移动端用户（更大的用户盘）的对局公平感与留存；缩短移动端的平均对局时长。</td></tr>
+        <tr><td><b>风险</b></td><td>便利功能可能被 PC 端玩家要求同步（而 PC 端无障碍，同步等于没有收益）；一键套用站位可能削弱"站位技巧"这一技术维度。</td></tr>
+        <tr><td><b>验证指标</b></td><td>移动端与 PC 端的同段位胜率差、移动端平均对局时长、移动端 D7 留存。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 03 · 观战体验：把"看比赛"做成一个产品</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 03</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>云顶的观战体验较差：8 个棋盘同时进行，观众难以同时掌握全局；缺少"为什么这个选手强"的信息层。这直接限制了它的直播传播效率。</td></tr>
+        <tr><td><b>归因</b></td><td>8 人混战是<b>信息并行的</b>，而观众的注意力是<b>串行的</b>。系统没有为"旁观者视角"提供任何辅助。</td></tr>
+        <tr><td><b>提案</b></td><td>① <b>上帝视角数据面板</b>：8 人血量/经济/等级/阵容实时对比条；② <b>"关键决策回放"</b>：回合结束后自动标记本回合各玩家的关键操作；③ <b>预测胜率指示</b>（如"该选手进前 4 概率 62%"）。这些都是<b>观看侧功能，不影响对局</b>。</td></tr>
+        <tr><td><b>预期收益</b></td><td>提升赛事与直播的可看性 → 提高内容传播效率 → 反向降低获客成本。这是一个<b>典型的"产品体验 → 运营效率"转化点</b>。</td></tr>
+        <tr><td><b>风险</b></td><td>数据面板可能被玩家在对局中借用（需限制为观战/回放模式专用）；开发成本较高，需评估 ROI。</td></tr>
+        <tr><td><b>验证指标</b></td><td>赛事直播观赛时长、观赛转化率（看直播 → 当日进游戏）、回放功能使用率。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 04 · 补齐"收藏系统"这一商业化缺口</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 04</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>付费点集中在宝典 + 外观 + 抽奖，但缺少一个能够长期承载"收藏欲"的系统容器。玩家买了很多小小英雄，却没有一个"展示柜"。</td></tr>
+        <tr><td><b>归因</b></td><td>云顶的"表达性付费"缺少<b>沉淀层</b>。传统卡牌游戏有"图鉴完成度"，MMO 有"成就墙"，云顶目前只有"仓库"。</td></tr>
+        <tr><td><b>提案</b></td><td>引入<b>"陈列室 / 图鉴系统"</b>：① 小小英雄、棋盘、特效的分类图鉴与完成度百分比；② 可自由布置的个人展示页（分享给好友）；③ 与段位/赛季成就挂钩的"资历展示"（如"Set 8 至今全勤"）。<b>图鉴提供完成度奖励（非强度），形成新的长期收集目标。</b></td></tr>
+        <tr><td><b>预期收益</b></td><td>直接提升 ARPPU 与收藏型用户的 LTV；提供"回访理由"（查看图鉴进度）；为老玩家提供资历表达出口（对冲"没有数值积累"的缺失感）。</td></tr>
+        <tr><td><b>风险</b></td><td>需警惕"完成度压迫感"（收集不全的焦虑），必须保证图鉴奖励<b>不影响对局</b>；UI 复杂度上升可能干扰主流程。</td></tr>
+        <tr><td><b>验证指标</b></td><td>ARPPU、收藏型用户（持有 ≥N 个外观）的次月留存、图鉴页人均访问次数。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 05 · 主动管理"外部数据生态"对 Meta 的加速固化</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 05</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>第三方数据站把"发现最优解"的时间从数天压缩到数小时，赛季第 2 周就可能出现主流阵容固化。</td></tr>
+        <tr><td><b>归因</b></td><td>信息公开化是不可逆的趋势，封杀既不可行也无意义。真正的问题不在于"信息流动"，而在于<b>游戏的"最优解"过于单一、过于容易被算出来</b>。</td></tr>
+        <tr><td><b>提案</b></td><td>① <b>提高"最优解的多样性"</b>：让不同阵容在强度上更接近，使统计意义上的"T0"不唯一；② <b>赛季中期引入规则轮换</b>（强化符文池、禁用羁绊、装备池调整），主动制造小规模混沌；③ <b>官方化部分数据</b>：提供官方的阵容胜率查询工具，掌握信息分发的节奏。</td></tr>
+        <tr><td><b>预期收益</b></td><td>延长赛季的"探索期"，直接对冲第 6–10 周的留存低点；减少玩家"抄作业 → 内卷 → 厌倦"的负循环。</td></tr>
+        <tr><td><b>风险</b></td><td>增强多样性会牺牲"版本答案的爽感"（很多玩家其实喜欢打 T0）；规则轮换增加学习成本，可能引起核心玩家反弹。</td></tr>
+        <tr><td><b>验证指标</b></td><td>赛季第 6–10 周的 DAU 衰减斜率、TOP5 阵容的使用率占比（占比越高越固化）、赛季中期的补丁后回访率。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 06 · 组队作弊与默契局的识别</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 06</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>8 人对局中，如果有多名玩家私下串通（如轮流让分、互相不抢卡），会直接破坏单局的公平性。这类行为在排位高分段与特殊时段更易发生。</td></tr>
+        <tr><td><b>归因</b></td><td>云顶的规则设计假设 8 名玩家互为对手，但没有强校验机制。<b>多人同局 = 天然的串通空间。</b></td></tr>
+        <tr><td><b>提案</b></td><td>① <b>行为特征检测</b>：异常低强度的对局表现、非自然的棋子交换模式、重复的同组匹配；② <b>限制预组队规模</b>（如最多 2 人组队进入排位，且时段/段位加权匹配）；③ <b>透明处罚公告</b>，形成威慑。</td></tr>
+        <tr><td><b>预期收益</b></td><td>保护竞技公信力（云顶最核心的无形资产）；减少高段位玩家的流失。</td></tr>
+        <tr><td><b>风险</b></td><td>误判概率；限制组队规模会削弱社交属性（与提案 08 的社交补强方向存在张力）。</td></tr>
+        <tr><td><b>验证指标</b></td><td>举报量与核实率、高段位玩家流失率、组队玩家的留存变化。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 07 · 回流玩家的"软着陆"通道</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 07</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>回流玩家虽然享受"赛季重置后的零落差"，但仍然面临"我不认识这些新弈子/新机制"的知识断层，直接进排位容易被连续碾压，体验恶劣。</td></tr>
+        <tr><td><b>归因</b></td><td>赛季重置解决了<b>数值落差</b>，但没有解决<b>知识落差</b>。玩家的技能（经济、站位、概率判断）可迁移，但知识（羁绊、装备、符文）不可迁移。</td></tr>
+        <tr><td><b>提案</b></td><td>① <b>回流专属的"赛季速览"</b>：3 分钟交互式内容，只讲本 Set 的核心变化；② <b>回流保护局数</b>（如前 3 局不扣分或扣除减半）；③ <b>回流任务链</b>：完成后给予外观奖励（而非战力）。</td></tr>
+        <tr><td><b>预期收益</b></td><td>显著提升回流玩家的"第二局率"——这是所有回流运营中唯一真正重要的指标。</td></tr>
+        <tr><td><b>风险</b></td><td>保护局可能被滥用（故意断线刷保护）；需与人机/休闲池区分清楚。</td></tr>
+        <tr><td><b>验证指标</b></td><td>回流玩家 7 日内的对局数分布、回流玩家的第二局完成率、回流 14 日留存。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <h3>提案 08 · 补强局内社交（长期战略项）</h3>
+  <div class="box">
+    <div class="bt" style="color:var(--muted)">PROPOSAL 08</div>
+    <div class="tw">
+    <table>
+      <tbody>
+        <tr><td style="width:110px"><b>现象</b></td><td>如第 5 章所述，云顶的"社会关联"驱动力相对薄弱。8 人对局中几乎没有有意义的社交互动，游戏内缺乏"因为朋友在线所以上线"的自然回流路径。</td></tr>
+        <tr><td><b>归因</b></td><td>自走棋的玩法结构天然是"独自计算"的。同时为了竞技公平，官方对局内交流保持高度克制（既不希望干扰决策，也不希望产生负面社交）。</td></tr>
+        <tr><td><b>提案</b></td><td>① <b>轻量正向互动</b>：如对局结束时向其他玩家发送"打得好"的固定表情，累积"体育精神分"并给予外观奖励；② <b>阵容分享与讨论入口</b>：结算界面直接生成可分享的阵容卡片；③ <b>观战与指导模式</b>：允许好友观战并做简单标注（非实时交流）。</td></tr>
+        <tr><td><b>预期收益</b></td><td>提高玩家间的相互黏性，创造"社交回流"通道；降低纯独狼玩家的流失率。</td></tr>
+        <tr><td><b>风险</b></td><td>任何社交功能都可能引入负面对抗（嘲讽、恶意互动），需要严格的正向设计（只允许正向表达）与举报机制配套。</td></tr>
+        <tr><td><b>验证指标</b></td><td>好友同局率、组队对局占比、社交功能使用率与负面举报率。</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 09 -->
+<section id="s9">
+  <div class="sec-head">
+    <div class="num">SECTION 09</div>
+    <h2>可迁移方法论</h2>
+    <p class="desc">从这份拆解中提炼出的、可以直接用到自研项目上的设计原则。</p>
+  </div>
+
+  <p>拆解的目的不是"知道云顶是怎么做的"，而是"知道它为什么这么做，以及这条逻辑能不能移植"。以下八条是我认为可以直接复用的原则。</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>#</th><th>原则</th><th>一句话表述</th><th>适用场景</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="num">01</td>
+        <td><b>随机性隔离原则</b></td>
+        <td>随机性放在玩家能改变的地方就是玩法，放在玩家不能改变的地方就是挫败。</td>
+        <td>任何含随机元素的策略/战斗系统。设计时先问：这个随机会不会破坏"可归因性"？</td>
+      </tr>
+      <tr>
+        <td class="num">02</td>
+        <td><b>用重置对抗膨胀</b></td>
+        <td>当内容的"积累"开始变成新玩家的壁障时，与其加新内容，不如定期整体重置，把运营节奏当作长线续命手段。</td>
+        <td>赛季制产品、卡牌/自走棋/策略类、任何"卡池固定则套路固化"的游戏。</td>
+      </tr>
+      <tr>
+        <td class="num">03</td>
+        <td><b>名次梯度收益</b></td>
+        <td>多人竞技不要设计成"只有第一名算赢"，梯度化的名次收益可以把单局正反馈覆盖率从 1/N 提高到接近 50%。</td>
+        <td>所有大逃杀 / 多人混战 / 排位制产品。</td>
+      </tr>
+      <tr>
+        <td class="num">04</td>
+        <td><b>多循环嵌套</b></td>
+        <td>把反馈周期从"秒级"铺到"周级"，让玩家在任何时间尺度上都有理由继续。且越低层的爽点必须越频繁。</td>
+        <td>所有长线运营产品。检查清单：我有没有微循环？有没有赛季级目标？</td>
+      </tr>
+      <tr>
+        <td class="num">05</td>
+        <td><b>心流锚点分层</b></td>
+        <td>保证"即使输也至少经历 1–2 次高光"——高质量的锚点密度，比"赢的爽感"更能决定留存。</td>
+        <td>任何单局体验复杂的游戏。设计时问：输掉的那 7 个玩家，这局带走了什么？</td>
+      </tr>
+      <tr>
+        <td class="num">06</td>
+        <td><b>付费与强度解耦</b></td>
+        <td>短期牺牲 ARPU，换取长期的竞技公信力、口碑资产和更低的获客成本。<b>前提是内容产能必须跟得上。</b></td>
+        <td>竞技类、社交展示位的价值足够高的产品。这是有条件的策略，不是普适真理。</td>
+      </tr>
+      <tr>
+        <td class="num">07</td>
+        <td><b>低门槛推进 + 高门槛优化</b></td>
+        <td>同一个核心循环，必须让休闲玩家能"轻松点一下推进"，同时让硬核玩家能"深度优化这一步"。</td>
+        <td>所有需要同时服务休闲与硬核的产品。这是扩大用户盘时最重要的一条。</td>
+      </tr>
+      <tr>
+        <td class="num">08</td>
+        <td><b>时间预算分层</b></td>
+        <td>当核心体验存在"入场成本"时，提供一个削减入场成本的平行模式，比做新手引导更能降低流失。</td>
+        <td>任何有较长"启动期"的游戏（如需要前期铺垫的策略/建造/经济类）。</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box tip">
+    <div class="bt">如果我要做一个自走棋-like 产品，会优先验证的三个假设</div>
+    <ol>
+      <li><b>内容产能能否支撑"每 10–13 周一次整体重置"？</b>如果不能，就必须放弃 Set 制，转而设计"增量但不膨胀"的替代方案（例如规则轮换 + 内容池复用）。<b>这是决定产品生死的第一个问题，应该在立项阶段就回答。</b></li>
+      <li><b>"低门槛推进"这一层是否足够简单？</b>如果玩家每回合需要做 5 分钟的操作才能推进，休闲用户会在第一时间流失，产品会退化为小众硬核游戏。</li>
+      <li><b>付费点是否有"每局必被看见"的展示位？</b>如果不能卖强度，那所有的收入都必须来自表达性付费，而表达性付费的前提是<b>可见性</b>。没有公共展示位的表达性付费，转化率会非常低。</li>
+    </ol>
+  </div>
+
+  <div class="hr"></div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="s10">
+  <div class="sec-head">
+    <div class="num">SECTION 10</div>
+    <h2>附录</h2>
+    <p class="desc">结构化数据与术语对照，便于查阅。</p>
+  </div>
+
+  <h3>附录 A · 一局的标准阶段结构</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>阶段</th><th>回合结构</th><th>类型</th><th>玩家主要动作</th><th>隐藏心流状态</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 阶段</b></td><td class="num">1-1 ~ 1-4</td><td>PvE + 装备分发</td><td>打野怪、拿装备、确定方向</td><td>放松 / 规划</td></tr>
+      <tr><td><b>2 阶段</b></td><td class="num">2-1 ~ 2-7（含选秀）</td><td>PvP + 共享选秀</td><td>攒钱、连胜/连败经营、观察对手</td><td>无聊区（低挑战）</td></tr>
+      <tr><td><b>3 阶段</b></td><td class="num">3-1 ~ 3-7（含选秀）</td><td>PvP + 共享选秀</td><td><b>第一次大 D 卡、阵容定型</b></td><td><span class="tag-inline r">焦虑区</span></td></tr>
+      <tr><td><b>4 阶段</b></td><td class="num">4-1 ~ 4-7（含选秀）</td><td>PvP + 共享选秀</td><td>补强、追三星、拉等级、转阵</td><td><span class="tag-inline">心流主区</span></td></tr>
+      <tr><td><b>5 阶段</b></td><td class="num">5-1 ~ 5-7（含选秀）</td><td>PvP + 共享选秀</td><td>冲刺成型、针对对手调整</td><td><span class="tag-inline">心流主区</span></td></tr>
+      <tr><td><b>6 阶段</b></td><td class="num">6-1 ~ 6-7</td><td>PvP</td><td>淘汰开始，残局站位博弈</td><td><span class="tag-inline g">高峰体验</span></td></tr>
+      <tr><td><b>7+ 阶段</b></td><td class="num">7-1 ~ 决赛</td><td>PvP</td><td>1v1 极限博弈</td><td><span class="tag-inline g">高峰体验</span></td></tr>
+    </tbody>
+    <caption>阶段数会因版本与出局速度浮动；此处为典型结构。</caption>
+  </table>
+  </div>
+
+  <h3>附录 B · 关键经济公式</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>公式</th><th>表达式（参考）</th><th>设计含义</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>回合总收入</td>
+        <td class="num">底薪(≈5) + min(持有金/10, 5) + 连胜/连败补贴 + 胜利奖励(≈1) + 特殊来源</td>
+        <td>利息是唯一"玩家完全可控"的变量，因此也是核心决策点</td>
+      </tr>
+      <tr>
+        <td>利息上限效应</td>
+        <td class="num">持有 ≥ 50 金时，边际收益 = 0</td>
+        <td>制造"必须花钱"的时间表，防止最优解退化为无限存钱</td>
+      </tr>
+      <tr>
+        <td>刷新期望成本</td>
+        <td class="num">2 金 / 次 → 找到目标卡的成本 ≈ 2 / (P_等级 × P_卡池)</td>
+        <td>把"运气"转化为"可预算的成本"，让决策可计算</td>
+      </tr>
+      <tr>
+        <td>升级的机会成本</td>
+        <td class="num">升 1 级 ≈ 4–8 次刷新的金币量</td>
+        <td>升级永远是全局性取舍，构成整局最大的决策之一</td>
+      </tr>
+      <tr>
+        <td>三星的稀缺性边界</td>
+        <td class="num">需 9 张同卡；卡池张数越少 → 全桌可达成家数越少</td>
+        <td>5 费三星在理论上全桌通常仅 1 家可成，稀缺性由数学保证</td>
+      </tr>
+      <tr>
+        <td>淘汰节奏</td>
+        <td class="num">单局失败伤害 ≈ 基础值 + 敌方存活单位 × 星级系数</td>
+        <td>输得越惨掉血越多 → 弱势玩家自然加速出局，缩短对局尾巴</td>
+      </tr>
+    </tbody>
+    <caption>以上为结构性表达，具体数值随版本浮动，实际以当前版本为准。</caption>
+  </table>
+  </div>
+
+  <h3>附录 C · 术语中英对照</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>中文</th><th>英文 / 社区术语</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td>经济 / 存钱</td><td>Econ</td><td>通过持有金币获取利息的运营策略</td></tr>
+      <tr><td>刷新商店</td><td>Roll / Reroll</td><td>花费金币刷新候选棋子</td></tr>
+      <tr><td>D 卡</td><td>D (keyboard shortcut)</td><td>玩家对"刷新商店"的俗称</td></tr>
+      <tr><td>阵容定型</td><td>Commit / Lock in</td><td>确定本局主要阵容方向</td></tr>
+      <tr><td>转阵</td><td>Pivot</td><td>中期改变阵容方向</td></tr>
+      <tr><td>羁绊</td><td>Trait / Synergy</td><td>同系列棋子凑数触发的加成</td></tr>
+      <tr><td>强化符文</td><td>Augment</td><td>每局提供的规则级增益选项</td></tr>
+      <tr><td>共享选秀</td><td>Carousel</td><td>全体玩家同时挑选棋子/装备的环节</td></tr>
+      <tr><td>侦查</td><td>Scouting</td><td>查看对手阵容与卡池占用情况</td></tr>
+      <tr><td>血量运营</td><td>HP / Health management</td><td>为了经济或装备刻意牺牲血量</td></tr>
+      <tr><td>连败流</td><td>Lose-streak / Open fort</td><td>刻意变弱以获取连败补贴与选秀优先</td></tr>
+      <tr><td>Meta（环境）</td><td>Meta</td><td>当前版本的主流最优打法集合</td></tr>
+      <tr><td>赛季</td><td>Set</td><td>约 13 周一次的整体内容更换</td></tr>
+      <tr><td>垃圾时间</td><td>Dead time</td><td>已无翻盘希望但仍需进行的时间段</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>附录 D · 参考资料</h3>
+  <ul class="small">
+    <li>Riot Games 官方：《Teamfight Tactics》赛季总览与版本更新公告（含 Set 18「Enchanted Wilds / 自然之力」官方页面）。</li>
+    <li>Riot Games 官方：《FAQ: TFT Unreal Migration（Unreal 迁移常见问题）》。</li>
+    <li>腾讯《英雄联盟》国服官方公告：云顶之弈赛季道具限时销售与活动公告。</li>
+    <li>《金铲铲之战》官方及媒体披露的赛季更新与平衡调整信息（含概率与连败收益相关调整方向）。</li>
+    <li>League of Legends Wiki：TFT 相关系统词条（Treasure Realms 等）。</li>
+    <li>第三方 TFT 数据与攻略站的公开统计数据（用于辅助判断 Meta 分布与固化速度）。</li>
+    <li>作者个人对局观察（约 1000 小时，最高段位超凡大师）与系统性复盘记录。</li>
+  </ul>
+
+  <div class="box note">
+    <div class="bt">关于本报告的说明</div>
+    <p>本报告为作者独立完成的游戏系统分析作品，用于展示系统拆解、心流建模与商业化分析的方法论。文中所有分析、框架与优化提案均为作者原创整理；涉及的具体数值为版本代表性参考值，<b>实际以游戏当前版本为准</b>；提案部分不代表官方立场。</p>
+  </div>
+</section>
+
+
+<footer>
+  <p><b>《云顶之弈》全维度系统拆解报告</b> · 文天赐 · 2026-09-20</p>
+  <p>本文所有数值为版本代表性参考值，具体以当前游戏版本为准。结构性结论与分析框架为作者原创整理。</p>
+</footer>
+
+</div><!-- /page -->
+</main>
+</div><!-- /wrap -->
+</body>
+</html>
